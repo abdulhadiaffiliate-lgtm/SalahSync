@@ -10,6 +10,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 
 /** One day's prayer times, in the zone they were calculated for. */
 data class DayTimes(
@@ -61,7 +62,8 @@ object PrayerCalculator {
             DateComponents(date.year, date.monthValue, date.dayOfMonth),
             params,
         )
-        fun z(d: java.util.Date) = d.toInstant().atZone(zone)
+        // Adhan returns minute-rounded times with stray milliseconds; snap to the exact minute.
+        fun z(d: java.util.Date) = d.toInstant().plusSeconds(30).truncatedTo(ChronoUnit.MINUTES).atZone(zone)
         return DayTimes(
             date = date,
             zone = zone,
