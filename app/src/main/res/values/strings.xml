@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SalahSync</string>
+    <string name="channel_adhan">Adhan</string>
+    <string name="channel_adhan_desc">Prayer time alerts with the adhan</string>
+    <string name="channel_prayer">Prayer alerts</string>
+    <string name="channel_prayer_desc">Prayer time alerts with a short sound</string>
+    <string name="channel_silent">Silent prayer alerts</string>
+    <string name="channel_silent_desc">Prayer time alerts without sound</string>
+    <string name="channel_reminders">Daily reminders</string>
+    <string name="channel_reminders_desc">Quran and dua reminders</string>
+</resources>
