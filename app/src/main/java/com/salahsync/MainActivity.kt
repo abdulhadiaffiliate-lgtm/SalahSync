@@ -1,5 +1,6 @@
 package com.salahsync
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -23,7 +24,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -35,6 +42,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -42,7 +50,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.salahsync.core.quran.AyahRef
 import com.salahsync.data.UserPrefs
+import com.salahsync.quran.QuranViewModel
 import com.salahsync.ui.components.SalahIcons
 import com.salahsync.ui.home.HomeScreen
 import com.salahsync.ui.more.AboutScreen
@@ -51,17 +61,31 @@ import com.salahsync.ui.more.MoreScreen
 import com.salahsync.ui.onboarding.OnboardingScreen
 import com.salahsync.ui.prayers.PrayerTimesScreen
 import com.salahsync.ui.qibla.QiblaScreen
+import com.salahsync.ui.quran.MiniPlayer
+import com.salahsync.ui.quran.PlayerScreen
+import com.salahsync.ui.quran.QuranScreen
+import com.salahsync.ui.quran.ReaderScreen
 import com.salahsync.ui.settings.SettingsActions
 import com.salahsync.ui.settings.SettingsScreen
 import com.salahsync.ui.tasbih.TasbihScreen
 import com.salahsync.ui.theme.Salah
 import com.salahsync.ui.theme.SalahSyncTheme
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()
 
+    /** Set when the recitation notification is tapped, to open the full player. */
+    private val openPlayer = MutableStateFlow(false)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) openPlayer.value = true
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) openPlayer.value = true
         setContent {
             val prefs by vm.prefs.collectAsStateWithLifecycle()
             val p = prefs ?: return@setContent
@@ -87,16 +111,24 @@ class MainActivity : ComponentActivity() {
                         onFinish = vm::completeOnboarding,
                     )
                 } else {
-                    AppShell(vm, p)
+                    AppShell(vm, p, openPlayer)
                 }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_OPEN_PLAYER = "com.salahsync.OPEN_PLAYER"
     }
 }
 
 private object Routes {
     const val HOME = "home"
     const val PRAYERS = "prayers"
+    const val QURAN = "quran"
+    const val READER = "quran/read/{surah}?ayah={ayah}"
+    const val PLAYER = "player"
+    fun reader(ref: AyahRef) = "quran/read/${ref.surah}?ayah=${ref.ayah}"
     const val QIBLA = "qibla"
     const val MORE = "more"
     const val TASBIH = "tasbih"
@@ -111,13 +143,26 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 private val tabs = listOf(
     Tab(Routes.HOME, "Home", SalahIcons.Home),
     Tab(Routes.PRAYERS, "Prayers", SalahIcons.Clock),
+    Tab(Routes.QURAN, "Quran", SalahIcons.Book),
     Tab(Routes.QIBLA, "Qibla", SalahIcons.Compass),
     Tab(Routes.MORE, "More", SalahIcons.More),
 )
 
 @Composable
-private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
+private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableStateFlow<Boolean>) {
     val nav = rememberNavController()
+    val quran: QuranViewModel = viewModel()
+    val playback by quran.playback.collectAsStateWithLifecycle()
+    val entry by nav.currentBackStackEntryAsState()
+    val route = entry?.destination?.route
+    val wantsPlayer by openPlayer.collectAsStateWithLifecycle()
+    LaunchedEffect(wantsPlayer, playback.active) {
+        if (wantsPlayer && playback.active) {
+            if (route != Routes.PLAYER) nav.navigate(Routes.PLAYER) { launchSingleTop = true }
+            openPlayer.value = false
+        }
+    }
+    val showMini = playback.active && route != Routes.PLAYER
     val now by vm.now.collectAsStateWithLifecycle()
     val today by vm.today.collectAsStateWithLifecycle()
     val tomorrow by vm.tomorrow.collectAsStateWithLifecycle()
@@ -125,7 +170,10 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
     val c = Salah.colors
 
     Box(Modifier.fillMaxSize().background(c.background)) {
-        NavHost(nav, startDestination = Routes.HOME, modifier = Modifier.fillMaxSize()) {
+        NavHost(
+            nav, startDestination = Routes.HOME,
+            modifier = Modifier.fillMaxSize().padding(bottom = if (showMini) 68.dp else 0.dp),
+        ) {
             composable(Routes.HOME) {
                 HomeScreen(
                     name = prefs.name,
@@ -137,8 +185,36 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
                     tomorrow = tomorrow,
                     onOpenQibla = { nav.switchTab(Routes.QIBLA) },
                     onOpenTasbih = { nav.navigate(Routes.TASBIH) },
+                    onOpenQuran = { nav.switchTab(Routes.QURAN) },
                     onOpenComingSoon = { nav.navigate(Routes.soon(it)) },
                     onOpenPrayers = { nav.switchTab(Routes.PRAYERS) },
+                )
+            }
+            composable(Routes.QURAN) { QuranScreen(quran, onRead = { nav.navigate(Routes.reader(it)) }) }
+            composable(
+                Routes.READER,
+                arguments = listOf(
+                    navArgument("surah") { type = NavType.IntType },
+                    navArgument("ayah") { type = NavType.IntType; defaultValue = 1 },
+                ),
+            ) { e ->
+                val surah = (e.arguments?.getInt("surah") ?: 1).coerceIn(1, 114)
+                ReaderScreen(
+                    vm = quran,
+                    surahNumber = surah,
+                    startAyah = e.arguments?.getInt("ayah") ?: 1,
+                    onBack = { nav.popBackStack() },
+                    onOpenSurah = { nav.navigate(Routes.reader(it)) { popUpTo(Routes.READER) { inclusive = true } } },
+                )
+            }
+            composable(Routes.PLAYER) {
+                PlayerScreen(
+                    vm = quran,
+                    onCollapse = { if (nav.currentBackStackEntry?.destination?.route == Routes.PLAYER) nav.popBackStack() },
+                    onOpenReader = { ref ->
+                        nav.popBackStack()
+                        nav.navigate(Routes.reader(ref))
+                    },
                 )
             }
             composable(Routes.PRAYERS) {
@@ -156,6 +232,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
             composable(Routes.MORE) {
                 MoreScreen(
                     onTasbih = { nav.navigate(Routes.TASBIH) },
+                    onQuran = { nav.switchTab(Routes.QURAN) },
                     onSettings = { nav.navigate(Routes.SETTINGS) },
                     onAbout = { nav.navigate(Routes.ABOUT) },
                     onComingSoon = { nav.navigate(Routes.soon(it)) },
@@ -193,7 +270,14 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
                 ComingSoonScreen(entry.arguments?.getString("feature").orEmpty())
             }
         }
-        BottomBar(nav, Modifier.align(Alignment.BottomCenter))
+        if (route != Routes.PLAYER) {
+            Column(Modifier.align(Alignment.BottomCenter)) {
+                AnimatedVisibility(showMini, enter = fadeIn() + slideInVertically { it / 2 }, exit = fadeOut() + slideOutVertically { it / 2 }) {
+                    MiniPlayer(quran, onExpand = { nav.navigate(Routes.PLAYER) { launchSingleTop = true } }, Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp))
+                }
+                BottomBar(nav)
+            }
+        }
     }
 }
 
@@ -218,7 +302,7 @@ private fun BottomBar(nav: NavHostController, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         tabs.forEach { tab ->
-            val selected = current == tab.route
+            val selected = current == tab.route || (tab.route == Routes.QURAN && current == Routes.READER)
             val tint = if (selected) c.accent else c.textMuted
             Column(
                 Modifier.weight(1f).fillMaxSize()

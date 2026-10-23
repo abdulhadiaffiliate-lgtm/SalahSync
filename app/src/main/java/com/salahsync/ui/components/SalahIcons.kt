@@ -13,12 +13,12 @@ import androidx.compose.ui.unit.dp
  * Tint them with Icon(tint = ...).
  */
 object SalahIcons {
-    private fun icon(name: String, vararg paths: String, stroke: Float = 1.5f): ImageVector =
+    private fun icon(name: String, vararg paths: String, stroke: Float = 1.5f, filled: Boolean = false): ImageVector =
         ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {
             paths.forEach { d ->
                 addPath(
                     pathData = addPathNodes(d),
-                    fill = null,
+                    fill = if (filled) SolidColor(Color.Black) else null,
                     stroke = SolidColor(Color.Black),
                     strokeLineWidth = stroke,
                     strokeLineCap = StrokeCap.Round,
@@ -57,4 +57,23 @@ object SalahIcons {
     val Share = icon("share", "M12,4 V15", "M8,8 L12,4 L16,8", "M5,13 V19 A1,1 0 0 0 6,20 H18 A1,1 0 0 0 19,19 V13")
     val Shield = icon("shield", "M12,3 L19,6 V11 C19,15.5 16,19 12,21 C8,19 5,15.5 5,11 V6 Z", "M9,12 L11,14 L15,10")
     val Reset = icon("reset", "M5,12 A7,7 0 1 0 7.1,7", "M5,4 V8 H9")
+
+    val Play = icon("play", "M8,5.5 L18.5,12 L8,18.5 Z", filled = true, stroke = 1.2f)
+    val Pause = icon("pause", "M8,5.5 H10.5 V18.5 H8 Z", "M13.5,5.5 H16 V18.5 H13.5 Z", filled = true, stroke = 1.2f)
+    val PlayLine = icon("play_line", "M8.5,6 L18,12 L8.5,18 Z")
+    val Next = icon("next", "M6,6 L14,12 L6,18 Z", "M17.5,6 V18", filled = true, stroke = 1.4f)
+    val Previous = icon("previous", "M18,6 L10,12 L18,18 Z", "M6.5,6 V18", filled = true, stroke = 1.4f)
+    val Bookmark = icon("bookmark", "M7,4 H17 V20 L12,16.5 L7,20 Z")
+    val BookmarkFilled = icon("bookmark_filled", "M7,4 H17 V20 L12,16.5 L7,20 Z", filled = true)
+    val Download = icon("download", "M12,4 V15", "M8,11 L12,15 L16,11", "M5,19 H19")
+    val Repeat = icon("repeat", "M5,11 V9 A2,2 0 0 1 7,7 H18", "M15,4 L18,7 L15,10", "M19,13 V15 A2,2 0 0 1 17,17 H6", "M9,14 L6,17 L9,20")
+    val RepeatOne = icon("repeat_one", "M5,11 V9 A2,2 0 0 1 7,7 H18", "M15,4 L18,7 L15,10", "M19,13 V15 A2,2 0 0 1 17,17 H6", "M9,14 L6,17 L9,20", "M11.5,10.5 L12.5,10 V14")
+    val Close = icon("close", "M6,6 L18,18", "M18,6 L6,18")
+    val Notes = icon("notes", "M6,4 H15 L18,7 V20 H6 Z", "M9,10 H15", "M9,13.5 H15", "M9,17 H13")
+    val Search = icon("search", circle(11f, 11f, 6.5f), "M16,16 L20,20")
+    val Copy = icon("copy", "M9,9 H19 V19 H9 Z", "M15,9 V5 H5 V15 H9")
+    val Headphones = icon("headphones", "M4,15 V12 A8,8 0 0 1 20,12 V15", "M4,14 H7 V20 H5 A1,1 0 0 1 4,19 Z", "M20,14 H17 V20 H19 A1,1 0 0 0 20,19 Z")
+    val ChevronDown = icon("chevron_down", "M5,9 L12,16 L19,9")
+    val TextSize = icon("text_size", "M4,18 L9,6 L14,18", "M5.7,14 H12.3", "M15,18 L17.5,11.5 L20,18", "M15.8,16 H19.2")
+    val Waves = icon("waves", "M4,10 V14", "M8,7 V17", "M12,4 V20", "M16,8 V16", "M20,11 V13")
 }

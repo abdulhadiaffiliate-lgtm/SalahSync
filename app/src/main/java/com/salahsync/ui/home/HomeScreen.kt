@@ -1,6 +1,5 @@
 package com.salahsync.ui.home
 
-import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,12 +22,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -38,6 +40,8 @@ import com.salahsync.core.DayTimes
 import com.salahsync.core.HijriDate
 import com.salahsync.core.Prayer
 import com.salahsync.data.DailyContent
+import com.salahsync.quran.Translation
+import com.salahsync.ui.quran.ShareCardDialog
 import com.salahsync.ui.components.CountdownRing
 import com.salahsync.ui.components.EyebrowText
 import com.salahsync.ui.components.GeometricPattern
@@ -79,13 +83,14 @@ fun HomeScreen(
     tomorrow: DayTimes?,
     onOpenQibla: () -> Unit,
     onOpenTasbih: () -> Unit,
+    onOpenQuran: () -> Unit,
     onOpenComingSoon: (String) -> Unit,
     onOpenPrayers: () -> Unit,
 ) {
     val c = Salah.colors
     val next = nextPrayer(now, today, tomorrow)
     val ayah = DailyContent.ayahFor(now.toLocalDate())
-    val context = LocalContext.current
+    var sharing by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxSize().background(c.background)) {
         GeometricPattern(Modifier.fillMaxWidth().height(320.dp))
         Column(
@@ -121,7 +126,7 @@ fun HomeScreen(
 
             Spacer(Modifier.height(18.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                QuickAction("Quran", SalahIcons.Book, Modifier.weight(1f)) { onOpenComingSoon("Quran") }
+                QuickAction("Quran", SalahIcons.Book, Modifier.weight(1f), onOpenQuran)
                 QuickAction("Qibla", SalahIcons.Compass, Modifier.weight(1f), onOpenQibla)
                 QuickAction("Tasbih", SalahIcons.Beads, Modifier.weight(1f), onOpenTasbih)
                 QuickAction("Feelings", SalahIcons.Heart, Modifier.weight(1f)) { onOpenComingSoon("Feelings") }
@@ -132,12 +137,8 @@ fun HomeScreen(
                 Text("Ayah of the Day", style = MaterialTheme.typography.titleMedium, color = c.text, modifier = Modifier.weight(1f))
                 Text(
                     "Share", style = MaterialTheme.typography.bodyMedium, color = c.accent,
-                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button) {
-                        val text = "${ayah.arabic}\n\n\"${ayah.english}\"\n${ayah.reference}\n\nShared from SalahSync"
-                        context.startActivity(
-                            Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null),
-                        )
-                    }.padding(horizontal = 8.dp, vertical = 12.dp),
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button) { sharing = true }
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
                 )
             }
             Column(
@@ -170,6 +171,12 @@ fun HomeScreen(
             }
         }
     }
+    if (sharing) AyahShare(ayah) { sharing = false }
+}
+
+@Composable
+private fun AyahShare(ayah: com.salahsync.data.Ayah, onDismiss: () -> Unit) {
+    ShareCardDialog(ayah.arabic, mapOf(Translation.ENGLISH to ayah.english), ayah.reference, onDismiss)
 }
 
 @Composable

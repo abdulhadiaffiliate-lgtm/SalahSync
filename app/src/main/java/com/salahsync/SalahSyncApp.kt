@@ -6,6 +6,11 @@ import com.salahsync.data.PrayerRepository
 import com.salahsync.data.SettingsRepository
 import com.salahsync.notify.Notifications
 import com.salahsync.notify.PrayerScheduler
+import com.salahsync.quran.QuranRepository
+import com.salahsync.quran.QuranStore
+import com.salahsync.quran.audio.AudioLibrary
+import com.salahsync.quran.audio.QueueBuilder
+import com.salahsync.quran.audio.QuranPlayer
 
 /** Holds the app's few long-lived objects; small enough that no DI framework is needed. */
 class SalahSyncApp : Application() {
@@ -17,6 +22,16 @@ class SalahSyncApp : Application() {
         private set
     lateinit var location: LocationProvider
         private set
+    lateinit var quran: QuranRepository
+        private set
+    lateinit var quranStore: QuranStore
+        private set
+    lateinit var audioLibrary: AudioLibrary
+        private set
+    lateinit var quranQueue: QueueBuilder
+        private set
+    lateinit var quranPlayer: QuranPlayer
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -24,6 +39,11 @@ class SalahSyncApp : Application() {
         prayers = PrayerRepository(this)
         scheduler = PrayerScheduler(this, prayers)
         location = LocationProvider(this)
+        quran = QuranRepository(this)
+        quranStore = QuranStore(this)
+        audioLibrary = AudioLibrary(this)
+        quranQueue = QueueBuilder(this, audioLibrary)
+        quranPlayer = QuranPlayer(this, quranQueue)
         Notifications.createChannels(this)
     }
 }

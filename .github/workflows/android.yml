@@ -17,6 +17,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Unit tests (prayer engine)
         run: ./gradlew :core:test --stacktrace
+      - name: Cache bundled recitation audio
+        uses: actions/cache@v4
+        with:
+          path: app/src/main/assets/audio
+          key: bundled-audio-${{ hashFiles('scripts/fetch-bundled-audio.sh') }}
+      - name: Fetch bundled recitation audio (33 short surahs)
+        # The app streams anything missing, so a flaky download should not fail the build.
+        continue-on-error: true
+        run: scripts/fetch-bundled-audio.sh
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
       - name: Upload debug APK

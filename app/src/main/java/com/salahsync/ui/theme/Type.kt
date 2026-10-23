@@ -59,3 +59,16 @@ val Eyebrow = TextStyle(fontFamily = Manrope, fontWeight = FontWeight(500), font
 val ArabicStyle = TextStyle(fontFamily = AmiriQuran, fontSize = 20.sp, lineHeight = 36.sp, textDirection = TextDirection.Rtl)
 
 val TabularTime = TextStyle(fontFamily = Manrope, fontWeight = FontWeight(500), fontSize = 16.sp, fontFeatureSettings = "tnum")
+
+/** Nastaliq for Urdu translation; it needs generous line height for its descenders. */
+val NotoNastaliqUrdu = FontFamily(Font(R.font.noto_nastaliq_urdu))
+
+val UrduStyle = TextStyle(fontFamily = NotoNastaliqUrdu, fontSize = 18.sp, lineHeight = 42.sp, textDirection = TextDirection.Rtl)
+
+/** Quran text in the reader, at the reader's chosen size. */
+fun quranStyle(sizeSp: Int) = TextStyle(
+    fontFamily = AmiriQuran,
+    fontSize = sizeSp.sp,
+    lineHeight = (sizeSp * 2.05f).sp,
+    textDirection = TextDirection.Rtl,
+)
