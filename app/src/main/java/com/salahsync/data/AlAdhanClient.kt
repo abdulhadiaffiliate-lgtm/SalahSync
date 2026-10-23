@@ -52,7 +52,7 @@ class AlAdhanClient(private val baseUrl: String = "https://api.aladhan.com/v1") 
     companion object {
         private val dateFormat = DateTimeFormatter.ofPattern("dd-MM-yyyy")
 
-        private val keys = mapOf(
+        private val prayerKeys: Map<Prayer, String> = mapOf(
             Prayer.FAJR to "Fajr",
             Prayer.SUNRISE to "Sunrise",
             Prayer.DHUHR to "Dhuhr",
@@ -65,7 +65,7 @@ class AlAdhanClient(private val baseUrl: String = "https://api.aladhan.com/v1") 
         fun parse(json: String): MonthTimings {
             val data = JSONObject(json).getJSONArray("data")
             var zone: ZoneId = ZoneId.systemDefault()
-            val days = buildMap {
+            val days = buildMap<LocalDate, Map<Prayer, LocalTime>> {
                 for (i in 0 until data.length()) {
                     val day = data.getJSONObject(i)
                     val timings = day.getJSONObject("timings")
@@ -74,7 +74,7 @@ class AlAdhanClient(private val baseUrl: String = "https://api.aladhan.com/v1") 
                     day.optJSONObject("meta")?.optString("timezone")?.takeIf { it.isNotBlank() }?.let {
                         zone = runCatching { ZoneId.of(it) }.getOrDefault(zone)
                     }
-                    put(date, keys.mapValues { (_, key) ->
+                    put(date, prayerKeys.mapValues { (_, key) ->
                         LocalTime.parse(timings.getString(key).substringBefore(' ').trim())
                     })
                 }
