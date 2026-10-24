@@ -141,9 +141,11 @@ private fun resultsLabel(count: Int, installed: Set<HadithBook>): String {
 }
 
 private fun noResults(q: HadithQuery, installed: Set<HadithBook>): String = when (q) {
-    is HadithQuery.Number ->
-        if (q.book != null && q.book !in installed) "Download ${q.book.title} to look up its hadith."
+    is HadithQuery.Number -> {
+        val book = q.book
+        if (book != null && book !in installed) "Download ${book.title} to look up its hadith."
         else "No hadith numbered ${q.ref} in your downloaded books."
+    }
     is HadithQuery.Words -> "No hadith in your downloaded books has all of those words."
 }
 

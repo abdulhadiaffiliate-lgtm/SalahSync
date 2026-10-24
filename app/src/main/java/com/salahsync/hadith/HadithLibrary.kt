@@ -126,7 +126,10 @@ class HadithLibrary(private val context: Context) {
     /** Searches the downloaded books, Bukhari first. */
     suspend fun search(query: HadithQuery): List<HadithItem> {
         val rows = when (query) {
-            is HadithQuery.Number -> dao.byNumber(query.ref, SEARCH_LIMIT).filter { query.book == null || it.book == query.book.slug }
+            is HadithQuery.Number -> {
+                val slug = query.book?.slug
+                dao.byNumber(query.ref, SEARCH_LIMIT).filter { slug == null || it.book == slug }
+            }
             is HadithQuery.Words -> dao.matching(query.match, SEARCH_LIMIT)
         }
         val titles = mutableMapOf<Pair<String, Int>, String>()
