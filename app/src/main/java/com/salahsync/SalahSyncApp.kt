@@ -11,6 +11,7 @@ import com.salahsync.quran.QuranStore
 import com.salahsync.quran.audio.AudioLibrary
 import com.salahsync.quran.audio.QueueBuilder
 import com.salahsync.quran.audio.QuranPlayer
+import com.salahsync.tracker.TrackerRepository
 
 /** Holds the app's few long-lived objects; small enough that no DI framework is needed. */
 class SalahSyncApp : Application() {
@@ -32,6 +33,8 @@ class SalahSyncApp : Application() {
         private set
     lateinit var quranPlayer: QuranPlayer
         private set
+    lateinit var tracker: TrackerRepository
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -44,6 +47,7 @@ class SalahSyncApp : Application() {
         audioLibrary = AudioLibrary(this)
         quranQueue = QueueBuilder(this, audioLibrary)
         quranPlayer = QuranPlayer(this, quranQueue)
+        tracker = TrackerRepository(this)
         Notifications.createChannels(this)
     }
 }

@@ -4,7 +4,7 @@ An Android app that reminds you of the five daily prayers, with accurate times f
 
 ## Status
 
-v1.0 Core and v1.1 Quran are in progress. See the product plan for the full roadmap (word-by-word, tafseer, hadith and more come in later releases).
+v1.0 Core, v1.1 Quran and v1.2 Tracker and Adhkar are in progress. See the product plan for the full roadmap (word-by-word, tafseer, hadith and more come in later releases).
 
 ## Quran (v1.1)
 
@@ -13,6 +13,12 @@ v1.0 Core and v1.1 Quran are in progress. See the product plan for the full road
 - A listener with 8 reciters: per-ayah streaming from EveryAyah, the ayah being recited highlighted in the reader, background playback with lock-screen controls, a mini-player above the tabs and a full player (repeat ayah or surah, speed, seek by ayah, carry on into the next surah).
 - Al-Fatihah and the last 32 surahs by Mishary Alafasy are bundled for offline listening; any surah can be downloaded per reciter.
 - Share any ayah, or the Ayah of the Day, as an image on one of four backgrounds.
+
+## Prayer tracker and adhkar (v1.2)
+
+- Tick each of the five prayers as prayed. Any prayer not ticked by the end of its day counts as Qada, per prayer; log each Qada you make up, and add missed prayers from before you started tracking.
+- The record lives in a local Room database (`salah_tracker.db`) that is never uploaded and is excluded from cloud backup and device transfer (`res/xml/backup_rules.xml`, `res/xml/data_extraction_rules.xml`).
+- Morning and evening adhkar with tap-to-count; hold Ayat al-Kursi or the three Quls for the full text. Each dhikr's info icon shows its source book, hadith number, narrator and grading, linked to sunnah.com. The list is in `core/.../adhkar/Adhkar.kt`.
 
 ## Build
 
@@ -30,7 +36,7 @@ Every pull request builds a debug APK in GitHub Actions; download it from the ru
 
 | Module | What it holds |
 | --- | --- |
-| `core` | Pure Kotlin prayer engine: times (Adhan library), regional defaults, Hijri dates, Qibla; Quran surah and juz metadata |
+| `core` | Pure Kotlin prayer engine: times (Adhan library), regional defaults, Hijri dates, Qibla; Quran surah and juz metadata; Qada arithmetic; the adhkar and their references |
 | `app` | Android app: Jetpack Compose UI, settings, AlAdhan online times, alarms and notifications, the Quran reader and Media3 player |
 
 ## Adhan audio

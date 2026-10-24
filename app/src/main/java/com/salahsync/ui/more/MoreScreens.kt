@@ -35,7 +35,14 @@ import com.salahsync.ui.theme.ArabicStyle
 import com.salahsync.ui.theme.Salah
 
 @Composable
-fun MoreScreen(onTasbih: () -> Unit, onQuran: () -> Unit, onSettings: () -> Unit, onAbout: () -> Unit, onComingSoon: (String) -> Unit) {
+fun MoreScreen(
+    onTasbih: () -> Unit,
+    onAdhkar: () -> Unit,
+    onTracker: () -> Unit,
+    onQuran: () -> Unit,
+    onSettings: () -> Unit,
+    onAbout: () -> Unit,
+) {
     val c = Salah.colors
     Column(
         Modifier.fillMaxSize().background(c.background).verticalScroll(rememberScrollState()).statusBarsPadding()
@@ -45,7 +52,8 @@ fun MoreScreen(onTasbih: () -> Unit, onQuran: () -> Unit, onSettings: () -> Unit
         Text("More", style = MaterialTheme.typography.headlineLarge, color = c.text, modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
         Entry("Tasbih", "Dhikr counter: 33, 33, 34", SalahIcons.Beads, onTasbih)
         Entry("Quran", "Read, listen and keep your place", SalahIcons.Book, onQuran)
-        Entry("Duas and adhkar", "Coming soon", SalahIcons.Heart) { onComingSoon("Duas and adhkar") }
+        Entry("Morning and evening adhkar", "With the hadith source for each", SalahIcons.Heart, onAdhkar)
+        Entry("Prayer tracker", "Daily prayers and Qada, on this phone only", SalahIcons.Check, onTracker)
         Entry("Settings", "Prayer times, alerts, appearance", SalahIcons.Sliders, onSettings)
         Entry("About", "Sources, licenses and privacy", SalahIcons.Shield, onAbout)
     }
@@ -110,7 +118,7 @@ fun AboutScreen() {
                 Text("Your data is safe", style = MaterialTheme.typography.titleLarge, color = c.text)
             }
             Text(
-                "Your name, settings, bookmarks and prayer history stay on this phone. There is no account and no tracking. " +
+                "Your name, settings, bookmarks, prayer history and Qada stay on this phone. There is no account and no tracking. " +
                     "The only things sent online are your approximate coordinates, to fetch the AlAdhan timetable (you can turn that off), " +
                     "and requests for recitation audio when you listen.",
                 style = MaterialTheme.typography.bodyMedium, color = c.textMuted,
@@ -125,6 +133,7 @@ fun AboutScreen() {
         Source("Urdu translation", "Maulana Muhammad Junagarhi, with notes by Hafiz Salahuddin Yusuf. From QuranEnc.com, version 1.1.3, reproduced verbatim.")
         Source("Recitations", "Streamed per ayah from EveryAyah.com. Mishary Rashid Alafasy's recitation of Al-Fatihah and the last 32 surahs is included for offline listening.")
         Source("Surah and juz data", "Tanzil Project quran-data metadata.")
+        Source("Adhkar", "Morning and evening adhkar from Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud and Jami' at-Tirmidhi, with gradings as given on sunnah.com. Each dhikr's ⓘ shows its source.")
 
         EyebrowText("Open-source licenses", color = c.accent)
         Source("Adhan for Java", "Copyright Batoul Apps. MIT License.")
@@ -133,6 +142,7 @@ fun AboutScreen() {
         Source("Amiri Quran", "Copyright 2010-2022 The Amiri Project Authors. SIL Open Font License 1.1.")
         Source("Noto Nastaliq Urdu", "Copyright 2022 The Noto Project Authors. SIL Open Font License 1.1.")
         Source("AndroidX Media3", "Copyright The Android Open Source Project. Apache License 2.0.")
+        Source("AndroidX Room", "Copyright The Android Open Source Project. Apache License 2.0.")
         Source("AndroidX and Jetpack Compose", "Copyright The Android Open Source Project. Apache License 2.0.")
         Source("Kotlin and kotlinx.coroutines", "Copyright JetBrains s.r.o. Apache License 2.0.")
     }
