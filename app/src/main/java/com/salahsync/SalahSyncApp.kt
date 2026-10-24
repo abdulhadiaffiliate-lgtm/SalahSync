@@ -4,6 +4,8 @@ import android.app.Application
 import com.salahsync.data.LocationProvider
 import com.salahsync.data.PrayerRepository
 import com.salahsync.data.SettingsRepository
+import com.salahsync.hadith.HadithLibrary
+import com.salahsync.hadith.HadithStore
 import com.salahsync.notify.Notifications
 import com.salahsync.notify.PrayerScheduler
 import com.salahsync.notify.PrayerSilence
@@ -38,6 +40,10 @@ class SalahSyncApp : Application() {
         private set
     lateinit var tracker: TrackerRepository
         private set
+    lateinit var hadith: HadithLibrary
+        private set
+    lateinit var hadithStore: HadithStore
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -52,6 +58,8 @@ class SalahSyncApp : Application() {
         quranQueue = QueueBuilder(this, audioLibrary)
         quranPlayer = QuranPlayer(this, quranQueue)
         tracker = TrackerRepository(this)
+        hadith = HadithLibrary(this)
+        hadithStore = HadithStore(this)
         Notifications.createChannels(this)
     }
 }

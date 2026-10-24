@@ -40,6 +40,8 @@ import com.salahsync.core.DayTimes
 import com.salahsync.core.HijriDate
 import com.salahsync.core.Prayer
 import com.salahsync.data.DailyContent
+import com.salahsync.hadith.HadithItem
+import com.salahsync.hadith.HadithLanguage
 import com.salahsync.quran.Translation
 import com.salahsync.ui.quran.ShareCardDialog
 import com.salahsync.ui.components.CountdownRing
@@ -47,6 +49,8 @@ import com.salahsync.ui.components.EyebrowText
 import com.salahsync.ui.components.GeometricPattern
 import com.salahsync.ui.components.GoldDivider
 import com.salahsync.ui.components.SalahIcons
+import com.salahsync.ui.hadith.TranslationText
+import com.salahsync.ui.hadith.shown
 import com.salahsync.ui.theme.ArabicStyle
 import com.salahsync.ui.theme.Cormorant
 import com.salahsync.ui.theme.Salah
@@ -86,6 +90,11 @@ fun HomeScreen(
     onOpenQuran: () -> Unit,
     onOpenComingSoon: (String) -> Unit,
     onOpenPrayers: () -> Unit,
+    dailyHadith: HadithItem?,
+    hadithTopic: String?,
+    hadithLanguage: HadithLanguage,
+    onOpenDailyHadith: (HadithItem) -> Unit,
+    onOpenHadith: () -> Unit,
 ) {
     val c = Salah.colors
     val next = nextPrayer(now, today, tomorrow)
@@ -154,6 +163,34 @@ fun HomeScreen(
                     color = c.onCard, textAlign = TextAlign.Center,
                 )
                 EyebrowText(ayah.reference, color = c.onCardMuted)
+            }
+
+            if (dailyHadith != null) {
+                Spacer(Modifier.height(22.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Hadith of the Day", style = MaterialTheme.typography.titleMedium, color = c.text, modifier = Modifier.weight(1f))
+                    Text(
+                        "All hadith", style = MaterialTheme.typography.bodyMedium, color = c.accent,
+                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button, onClick = onOpenHadith)
+                            .padding(horizontal = 8.dp, vertical = 12.dp),
+                    )
+                }
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(c.card)
+                        .clickable(role = Role.Button) { onOpenDailyHadith(dailyHadith) }
+                        .padding(horizontal = 20.dp, vertical = 22.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (hadithTopic != null) {
+                        Text(
+                            hadithTopic, fontFamily = Cormorant, fontStyle = FontStyle.Italic, fontSize = 21.sp, lineHeight = 26.sp,
+                            color = c.onCard,
+                        )
+                    }
+                    TranslationText(dailyHadith.shown(hadithLanguage), maxLines = 5, color = c.onCard)
+                    GoldDivider(color = c.onCardMuted)
+                    EyebrowText(dailyHadith.label, color = c.onCardMuted)
+                }
             }
 
             Spacer(Modifier.height(16.dp))
