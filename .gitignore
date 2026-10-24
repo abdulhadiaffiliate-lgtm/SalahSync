@@ -8,3 +8,6 @@ captures/
 .kotlin/
 *.keystore
 *.jks
+
+# Recitation audio is fetched at build time by scripts/fetch-bundled-audio.sh
+app/src/main/assets/audio/

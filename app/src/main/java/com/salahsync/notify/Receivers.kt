@@ -5,10 +5,16 @@ import android.content.Context
 import android.content.Intent
 import com.salahsync.SalahSyncApp
 import com.salahsync.core.Prayer
+import com.salahsync.core.SilenceWindow
+import com.salahsync.core.tracker.QadaLedger
+import com.salahsync.core.tracker.WeeklyReports
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 private val receiverScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -58,11 +64,35 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 PrayerScheduler.Kind.DUA -> Notifications.show(
                     context, 31, Notifications.CHANNEL_REMINDERS, "Evening dua", "Take a quiet moment for your evening supplications.",
                 )
+                PrayerScheduler.Kind.SILENCE -> if (prayer != null) {
+                    val zone = ZoneId.systemDefault()
+                    val start = Instant.ofEpochMilli(intent.getLongExtra(PrayerScheduler.EXTRA_AT, 0)).atZone(zone)
+                        .minusSeconds(PrayerSilence.START_DELAY_SECONDS)
+                    val end = Instant.ofEpochMilli(intent.getLongExtra(PrayerScheduler.EXTRA_END, 0)).atZone(zone)
+                    app.silence.begin(prefs, SilenceWindow(prayer, label, start, end))
+                }
+                PrayerScheduler.Kind.WEEKLY_REPORT -> if (prefs.weeklyReport) postWeeklyReport(app)
                 null -> Unit
             }
             app.scheduler.reschedule(prefs)
         }
     }
+}
+
+/** Sums up last Friday-to-Thursday week from the local tracker. Nothing leaves the phone. */
+private suspend fun postWeeklyReport(app: SalahSyncApp) {
+    val snap = app.tracker.snapshot() ?: return
+    val today = LocalDate.now()
+    val owed = QadaLedger.counts(snap.since, today, snap.marks.prayed, snap.qada).values.sumOf { it.owed }
+    val r = WeeklyReports.build(WeeklyReports.lastCompleteWeekStart(today), today, snap.since, snap.marks.prayed, snap.marks.late, owed)
+    if (r.totals.tracked == 0) return
+    val t = r.totals
+    val lines = buildList {
+        add("${t.onTime} on time, ${t.late} late, ${t.missed} missed out of ${t.tracked}.")
+        if (r.currentStreak > 1) add("${r.currentStreak}-day streak of all five prayers.")
+        add(if (owed == 0) "No Qada owed." else "Qada owed: $owed.")
+    }
+    Notifications.showReport(app, "Your week of prayer", lines.joinToString(" "))
 }
 
 /** Rebuilds the alarm chain after reboot, app update, clock or time-zone changes. */

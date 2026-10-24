@@ -1,5 +1,6 @@
 package com.salahsync
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -23,7 +24,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -35,6 +42,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -42,8 +50,24 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.salahsync.adhkar.AdhkarViewModel
+import com.salahsync.core.AsrSchool
+import com.salahsync.core.guides.Madhhab
+import com.salahsync.core.hadith.HadithBook
+import com.salahsync.core.quran.AyahRef
 import com.salahsync.data.UserPrefs
+import com.salahsync.hadith.HadithItem
+import com.salahsync.hadith.HadithViewModel
+import com.salahsync.quran.QuranViewModel
+import com.salahsync.tracker.TrackerViewModel
+import com.salahsync.ui.adhkar.AdhkarScreen
 import com.salahsync.ui.components.SalahIcons
+import com.salahsync.ui.duas.DuasScreen
+import com.salahsync.ui.guides.GuidesScreen
+import com.salahsync.ui.hadith.HadithBookScreen
+import com.salahsync.ui.hadith.HadithChapterScreen
+import com.salahsync.ui.hadith.HadithDetailScreen
+import com.salahsync.ui.hadith.HadithScreen
 import com.salahsync.ui.home.HomeScreen
 import com.salahsync.ui.more.AboutScreen
 import com.salahsync.ui.more.ComingSoonScreen
@@ -51,17 +75,39 @@ import com.salahsync.ui.more.MoreScreen
 import com.salahsync.ui.onboarding.OnboardingScreen
 import com.salahsync.ui.prayers.PrayerTimesScreen
 import com.salahsync.ui.qibla.QiblaScreen
+import com.salahsync.ui.quran.MiniPlayer
+import com.salahsync.ui.quran.PlayerScreen
+import com.salahsync.ui.quran.QuranScreen
+import com.salahsync.ui.quran.ReaderScreen
 import com.salahsync.ui.settings.SettingsActions
 import com.salahsync.ui.settings.SettingsScreen
 import com.salahsync.ui.tasbih.TasbihScreen
 import com.salahsync.ui.theme.Salah
 import com.salahsync.ui.theme.SalahSyncTheme
+import com.salahsync.ui.tracker.ReportScreen
+import com.salahsync.ui.tracker.TrackerActions
+import com.salahsync.ui.tracker.TrackerScreen
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()
 
+    /** Set when the recitation notification is tapped, to open the full player. */
+    private val openPlayer = MutableStateFlow(false)
+
+    /** Set when the Friday report notification is tapped. */
+    private val openReport = MutableStateFlow(false)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) openPlayer.value = true
+        if (intent.getBooleanExtra(EXTRA_OPEN_REPORT, false)) openReport.value = true
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) openPlayer.value = true
+        if (savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_REPORT, false)) openReport.value = true
         setContent {
             val prefs by vm.prefs.collectAsStateWithLifecycle()
             val p = prefs ?: return@setContent
@@ -87,19 +133,40 @@ class MainActivity : ComponentActivity() {
                         onFinish = vm::completeOnboarding,
                     )
                 } else {
-                    AppShell(vm, p)
+                    AppShell(vm, p, openPlayer, openReport)
                 }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_OPEN_PLAYER = "com.salahsync.OPEN_PLAYER"
+        const val EXTRA_OPEN_REPORT = "com.salahsync.OPEN_REPORT"
     }
 }
 
 private object Routes {
     const val HOME = "home"
     const val PRAYERS = "prayers"
+    const val QURAN = "quran"
+    const val READER = "quran/read/{surah}?ayah={ayah}"
+    const val PLAYER = "player"
+    fun reader(ref: AyahRef) = "quran/read/${ref.surah}?ayah=${ref.ayah}"
     const val QIBLA = "qibla"
     const val MORE = "more"
     const val TASBIH = "tasbih"
+    const val TRACKER = "tracker"
+    const val REPORT = "tracker/report"
+    const val ADHKAR = "adhkar"
+    const val HADITH = "hadith"
+    const val HADITH_BOOK = "hadith/book/{book}"
+    const val HADITH_CHAPTER = "hadith/book/{book}/{chapter}"
+    const val HADITH_VIEW = "hadith/view/{book}/{ref}"
+    fun hadithBook(book: HadithBook) = "hadith/book/${book.slug}"
+    fun hadithChapter(book: HadithBook, chapter: Int) = "hadith/book/${book.slug}/$chapter"
+    fun hadithView(item: HadithItem) = "hadith/view/${item.book.slug}/${android.net.Uri.encode(item.ref)}"
+    const val DUAS = "duas"
+    const val GUIDES = "guides"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
     const val SOON = "soon/{feature}"
@@ -111,13 +178,38 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 private val tabs = listOf(
     Tab(Routes.HOME, "Home", SalahIcons.Home),
     Tab(Routes.PRAYERS, "Prayers", SalahIcons.Clock),
+    Tab(Routes.QURAN, "Quran", SalahIcons.Book),
     Tab(Routes.QIBLA, "Qibla", SalahIcons.Compass),
     Tab(Routes.MORE, "More", SalahIcons.More),
 )
 
 @Composable
-private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
+private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableStateFlow<Boolean>, openReport: MutableStateFlow<Boolean>) {
     val nav = rememberNavController()
+    val quran: QuranViewModel = viewModel()
+    val tracker: TrackerViewModel = viewModel()
+    val hadith: HadithViewModel = viewModel()
+    val hadithPrefs by hadith.prefs.collectAsStateWithLifecycle()
+    val dailyHadith by hadith.daily.collectAsStateWithLifecycle()
+    val trackerState by tracker.state.collectAsStateWithLifecycle()
+    val playback by quran.playback.collectAsStateWithLifecycle()
+    val entry by nav.currentBackStackEntryAsState()
+    val route = entry?.destination?.route
+    val wantsPlayer by openPlayer.collectAsStateWithLifecycle()
+    LaunchedEffect(wantsPlayer, playback.active) {
+        if (wantsPlayer && playback.active) {
+            if (route != Routes.PLAYER) nav.navigate(Routes.PLAYER) { launchSingleTop = true }
+            openPlayer.value = false
+        }
+    }
+    val wantsReport by openReport.collectAsStateWithLifecycle()
+    LaunchedEffect(wantsReport) {
+        if (wantsReport) {
+            if (route != Routes.REPORT) nav.navigate(Routes.REPORT) { launchSingleTop = true }
+            openReport.value = false
+        }
+    }
+    val showMini = playback.active && route != Routes.PLAYER
     val now by vm.now.collectAsStateWithLifecycle()
     val today by vm.today.collectAsStateWithLifecycle()
     val tomorrow by vm.tomorrow.collectAsStateWithLifecycle()
@@ -125,8 +217,13 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
     val c = Salah.colors
 
     Box(Modifier.fillMaxSize().background(c.background)) {
-        NavHost(nav, startDestination = Routes.HOME, modifier = Modifier.fillMaxSize()) {
+        NavHost(
+            nav, startDestination = Routes.HOME,
+            modifier = Modifier.fillMaxSize().padding(bottom = if (showMini) 68.dp else 0.dp),
+        ) {
             composable(Routes.HOME) {
+                // Read through the collected state so the card appears once the daily set loads.
+                val todaysHadith = dailyHadith.takeIf { it.isNotEmpty() }?.let { hadith.dailyFor(now.toLocalDate()) }
                 HomeScreen(
                     name = prefs.name,
                     streak = prefs.streakDays,
@@ -137,8 +234,41 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
                     tomorrow = tomorrow,
                     onOpenQibla = { nav.switchTab(Routes.QIBLA) },
                     onOpenTasbih = { nav.navigate(Routes.TASBIH) },
+                    onOpenQuran = { nav.switchTab(Routes.QURAN) },
                     onOpenComingSoon = { nav.navigate(Routes.soon(it)) },
                     onOpenPrayers = { nav.switchTab(Routes.PRAYERS) },
+                    dailyHadith = todaysHadith,
+                    hadithTopic = todaysHadith?.let { hadith.topicOf(it)?.topic },
+                    hadithLanguage = hadithPrefs.language,
+                    onOpenDailyHadith = { nav.navigate(Routes.hadithView(it)) },
+                    onOpenHadith = { nav.navigate(Routes.HADITH) },
+                )
+            }
+            composable(Routes.QURAN) { QuranScreen(quran, onRead = { nav.navigate(Routes.reader(it)) }) }
+            composable(
+                Routes.READER,
+                arguments = listOf(
+                    navArgument("surah") { type = NavType.IntType },
+                    navArgument("ayah") { type = NavType.IntType; defaultValue = 1 },
+                ),
+            ) { e ->
+                val surah = (e.arguments?.getInt("surah") ?: 1).coerceIn(1, 114)
+                ReaderScreen(
+                    vm = quran,
+                    surahNumber = surah,
+                    startAyah = e.arguments?.getInt("ayah") ?: 1,
+                    onBack = { nav.popBackStack() },
+                    onOpenSurah = { nav.navigate(Routes.reader(it)) { popUpTo(Routes.READER) { inclusive = true } } },
+                )
+            }
+            composable(Routes.PLAYER) {
+                PlayerScreen(
+                    vm = quran,
+                    onCollapse = { if (nav.currentBackStackEntry?.destination?.route == Routes.PLAYER) nav.popBackStack() },
+                    onOpenReader = { ref ->
+                        nav.popBackStack()
+                        nav.navigate(Routes.reader(ref))
+                    },
                 )
             }
             composable(Routes.PRAYERS) {
@@ -147,7 +277,10 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
                     now = now,
                     loadTimes = vm::timesFor,
                     hijriFor = vm::hijriFor,
-                    onTogglePrayed = vm::togglePrayed,
+                    isPrayed = { d, p -> trackerState?.isPrayed(d, p) == true },
+                    onTogglePrayed = tracker::togglePrayed,
+                    qadaOwed = trackerState?.totalOwed ?: 0,
+                    onOpenTracker = { nav.navigate(Routes.TRACKER) },
                     onAlertChange = vm::setAlert,
                     onOpenSettings = { nav.navigate(Routes.SETTINGS) },
                 )
@@ -156,17 +289,78 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
             composable(Routes.MORE) {
                 MoreScreen(
                     onTasbih = { nav.navigate(Routes.TASBIH) },
+                    onAdhkar = { nav.navigate(Routes.ADHKAR) },
+                    onDuas = { nav.navigate(Routes.DUAS) },
+                    onGuides = { nav.navigate(Routes.GUIDES) },
+                    onTracker = { nav.navigate(Routes.TRACKER) },
+                    onQuran = { nav.switchTab(Routes.QURAN) },
+                    onHadith = { nav.navigate(Routes.HADITH) },
                     onSettings = { nav.navigate(Routes.SETTINGS) },
                     onAbout = { nav.navigate(Routes.ABOUT) },
-                    onComingSoon = { nav.navigate(Routes.soon(it)) },
+                )
+            }
+            composable(Routes.HADITH) {
+                HadithScreen(
+                    hadith,
+                    onOpenBook = { nav.navigate(Routes.hadithBook(it)) },
+                    onOpenHadith = { nav.navigate(Routes.hadithView(it)) },
+                )
+            }
+            composable(Routes.HADITH_BOOK, arguments = listOf(navArgument("book") { type = NavType.StringType })) { e ->
+                val book = HadithBook.bySlug(e.arguments?.getString("book")) ?: HadithBook.BUKHARI
+                HadithBookScreen(hadith, book, onBack = { nav.popBackStack() }, onOpenChapter = { nav.navigate(Routes.hadithChapter(book, it)) })
+            }
+            composable(
+                Routes.HADITH_CHAPTER,
+                arguments = listOf(navArgument("book") { type = NavType.StringType }, navArgument("chapter") { type = NavType.IntType }),
+            ) { e ->
+                val book = HadithBook.bySlug(e.arguments?.getString("book")) ?: HadithBook.BUKHARI
+                HadithChapterScreen(hadith, book, e.arguments?.getInt("chapter") ?: 1, onBack = { nav.popBackStack() })
+            }
+            composable(
+                Routes.HADITH_VIEW,
+                arguments = listOf(navArgument("book") { type = NavType.StringType }, navArgument("ref") { type = NavType.StringType }),
+            ) { e ->
+                val book = HadithBook.bySlug(e.arguments?.getString("book")) ?: HadithBook.BUKHARI
+                HadithDetailScreen(
+                    hadith, book, e.arguments?.getString("ref").orEmpty(),
+                    onBack = { nav.popBackStack() },
+                    onOpenBook = { nav.navigate(Routes.hadithBook(it)) },
                 )
             }
             composable(Routes.TASBIH) { TasbihScreen() }
+            composable(Routes.TRACKER) {
+                TrackerScreen(
+                    state = trackerState,
+                    actions = TrackerActions(
+                        togglePrayed = tracker::togglePrayed,
+                        logMadeUp = { tracker.logMadeUp(it) },
+                        undoMadeUp = { tracker.undoMadeUp(it) },
+                        setEarlier = { p, n -> tracker.setEarlier(p, n) },
+                        toggleLate = { d, p -> tracker.toggleLate(d, p) },
+                        openReport = { nav.navigate(Routes.REPORT) },
+                    ),
+                )
+            }
+            composable(Routes.REPORT) {
+                ReportScreen(trackerState, onOpenTracker = {
+                    if (!nav.popBackStack(Routes.TRACKER, inclusive = false)) nav.navigate(Routes.TRACKER)
+                })
+            }
+            composable(Routes.ADHKAR) {
+                val adhkar: AdhkarViewModel = viewModel()
+                AdhkarScreen(adhkar)
+            }
+            composable(Routes.DUAS) { DuasScreen() }
+            composable(Routes.GUIDES) {
+                GuidesScreen(if (prefs.asrSchool == AsrSchool.HANAFI) Madhhab.HANAFI else Madhhab.SHAFII)
+            }
             composable(Routes.SETTINGS) {
                 SettingsScreen(
                     prefs = prefs,
                     locating = locating,
                     canScheduleExact = vm.canScheduleExact(),
+                    checkDndAccess = vm::hasDndAccess,
                     actions = SettingsActions(
                         setName = vm::setName,
                         locate = { vm.locate() },
@@ -184,8 +378,15 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
                         setQuranReminder = vm::setQuranReminder,
                         setDuaReminder = vm::setDuaReminder,
                         setTheme = vm::setTheme,
+                        setSilentEnabled = vm::setSilentEnabled,
+                        setSilentMode = vm::setSilentMode,
+                        setSilentMinutes = vm::setSilentMinutes,
+                        setSilentJumuahMinutes = vm::setSilentJumuahMinutes,
+                        setSilentFor = vm::setSilentFor,
+                        setWeeklyReport = vm::setWeeklyReport,
                     ),
                     onOpenAbout = { nav.navigate(Routes.ABOUT) },
+                    onOpenReport = { nav.navigate(Routes.REPORT) },
                 )
             }
             composable(Routes.ABOUT) { AboutScreen() }
@@ -193,7 +394,14 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs) {
                 ComingSoonScreen(entry.arguments?.getString("feature").orEmpty())
             }
         }
-        BottomBar(nav, Modifier.align(Alignment.BottomCenter))
+        if (route != Routes.PLAYER) {
+            Column(Modifier.align(Alignment.BottomCenter)) {
+                AnimatedVisibility(showMini, enter = fadeIn() + slideInVertically { it / 2 }, exit = fadeOut() + slideOutVertically { it / 2 }) {
+                    MiniPlayer(quran, onExpand = { nav.navigate(Routes.PLAYER) { launchSingleTop = true } }, Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp))
+                }
+                BottomBar(nav)
+            }
+        }
     }
 }
 
@@ -218,7 +426,7 @@ private fun BottomBar(nav: NavHostController, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         tabs.forEach { tab ->
-            val selected = current == tab.route
+            val selected = current == tab.route || (tab.route == Routes.QURAN && current == Routes.READER)
             val tint = if (selected) c.accent else c.textMuted
             Column(
                 Modifier.weight(1f).fillMaxSize()

@@ -6,6 +6,7 @@ import com.salahsync.core.HighLatitude
 import com.salahsync.core.Method
 import com.salahsync.core.Prayer
 import com.salahsync.core.PrayerSettings
+import com.salahsync.core.SilenceMode
 
 enum class ThemeMode(val displayName: String) {
     DARK("Dark"), LIGHT("Light"), SYSTEM("Follow system")
@@ -46,7 +47,12 @@ data class UserPrefs(
     val theme: ThemeMode = ThemeMode.DARK,
     val streakDays: Int = 0,
     val lastOpenEpochDay: Long = -1,
-    val prayed: Set<String> = emptySet(),
+    val silentEnabled: Boolean = false,
+    val silentMode: SilenceMode = SilenceMode.DO_NOT_DISTURB,
+    val silentMinutes: Int = 20,
+    val silentJumuahMinutes: Int = 60,
+    val silentPrayers: Set<Prayer> = Prayer.fard.toSet(),
+    val weeklyReport: Boolean = true,
 ) {
     val prayerSettings: PrayerSettings
         get() = PrayerSettings(method, asrSchool, highLatitude, offsets)
@@ -54,11 +60,11 @@ data class UserPrefs(
     fun alertFor(prayer: Prayer): AlertStyle = alerts[prayer] ?: AlertStyle.OFF
 
     companion object {
+        val silentMinuteOptions = listOf(10, 15, 20, 30, 45, 60)
+        val jumuahMinuteOptions = listOf(30, 45, 60, 75, 90)
+
         val defaultAlerts: Map<Prayer, AlertStyle> = Prayer.entries.associateWith {
             if (it == Prayer.SUNRISE) AlertStyle.OFF else AlertStyle.ADHAN
         }
-
-        /** Key for the prayed-tracker set: "2026-10-23:ASR". */
-        fun prayedKey(epochDayIso: String, prayer: Prayer) = "$epochDayIso:${prayer.name}"
     }
 }

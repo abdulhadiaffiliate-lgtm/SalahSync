@@ -47,16 +47,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.salahsync.BuildConfig
 import com.salahsync.core.AsrSchool
 import com.salahsync.core.HighLatitude
 import com.salahsync.core.Method
 import com.salahsync.core.Prayer
+import com.salahsync.core.SilenceMode
 import com.salahsync.data.AlertStyle
 import com.salahsync.data.Cities
 import com.salahsync.data.SavedLocation
 import com.salahsync.data.ThemeMode
 import com.salahsync.data.UserPrefs
+import com.salahsync.notify.PrayerSilence
 import com.salahsync.ui.components.EyebrowText
 import com.salahsync.ui.components.SalahIcons
 import com.salahsync.ui.theme.Salah
@@ -78,6 +81,12 @@ class SettingsActions(
     val setQuranReminder: (Boolean) -> Unit,
     val setDuaReminder: (Boolean) -> Unit,
     val setTheme: (ThemeMode) -> Unit,
+    val setSilentEnabled: (Boolean) -> Unit,
+    val setSilentMode: (SilenceMode) -> Unit,
+    val setSilentMinutes: (Int) -> Unit,
+    val setSilentJumuahMinutes: (Int) -> Unit,
+    val setSilentFor: (Prayer, Boolean) -> Unit,
+    val setWeeklyReport: (Boolean) -> Unit,
 )
 
 private sealed interface Picker {
@@ -89,6 +98,10 @@ private sealed interface Picker {
     data class Alert(val prayer: Prayer) : Picker
     data object PreReminder : Picker
     data object Theme : Picker
+    data object SilentMode : Picker
+    data object SilentMinutes : Picker
+    data object JumuahMinutes : Picker
+    data object DndAccess : Picker
 }
 
 fun Context.isIgnoringBatteryOptimizations(): Boolean =
@@ -107,6 +120,10 @@ fun Context.openExactAlarmSettings() {
     }
 }
 
+fun Context.openDndAccessSettings() {
+    runCatching { startActivity(PrayerSilence.policyAccessIntent()) }
+}
+
 fun Context.openNotificationSettings() {
     runCatching {
         startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
@@ -118,12 +135,21 @@ fun SettingsScreen(
     prefs: UserPrefs,
     locating: Boolean,
     canScheduleExact: Boolean,
+    checkDndAccess: () -> Boolean,
     actions: SettingsActions,
     onOpenAbout: () -> Unit,
+    onOpenReport: () -> Unit,
 ) {
     val c = Salah.colors
     val context = LocalContext.current
     var picker by remember { mutableStateOf<Picker?>(null) }
+    // Access is granted on a system screen, so check again whenever the user comes back.
+    var dndAccess by remember { mutableStateOf(checkDndAccess()) }
+    LifecycleResumeEffect(Unit) {
+        dndAccess = checkDndAccess()
+        onPauseOrDispose { }
+    }
+    val needsAccess = prefs.silentMode.needsPolicyAccess && !dndAccess
 
     Column(
         Modifier.fillMaxSize().background(c.background).verticalScroll(rememberScrollState()).statusBarsPadding()
@@ -178,6 +204,40 @@ fun SettingsScreen(
             Item("System notification settings", "Sounds, vibration and lock screen", onClick = context::openNotificationSettings)
         }
 
+        Section("Silent during prayer") {
+            Toggle(
+                "Silence my phone at prayer times",
+                "Turns quiet when each prayer begins and puts the sound back by itself",
+                prefs.silentEnabled,
+            ) { on ->
+                actions.setSilentEnabled(on)
+                if (on && needsAccess) picker = Picker.DndAccess
+            }
+            if (prefs.silentEnabled) {
+                Item("How", prefs.silentMode.displayName) { picker = Picker.SilentMode }
+                if (needsAccess) {
+                    Item(
+                        "Allow Do Not Disturb access",
+                        "Until you do, SalahSync sets your phone to vibrate instead",
+                        onClick = { picker = Picker.DndAccess },
+                    )
+                }
+                Item("For how long", "${prefs.silentMinutes} minutes after each prayer begins") { picker = Picker.SilentMinutes }
+                Item("On Fridays, for Jumu'ah", "${prefs.silentJumuahMinutes} minutes") { picker = Picker.JumuahMinutes }
+                EyebrowText("Prayers", modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp))
+                Prayer.fard.forEach { p ->
+                    Toggle(p.displayName, if (p in prefs.silentPrayers) "Quiet for this prayer" else "Sound stays on", p in prefs.silentPrayers) {
+                        actions.setSilentFor(p, it)
+                    }
+                }
+            }
+        }
+
+        Section("Weekly report") {
+            Toggle("Friday report", "A summary of your week every Friday at 9:00 AM", prefs.weeklyReport, actions.setWeeklyReport)
+            Item("Open this week's report", "On time, late, missed, Qada and streaks", onClick = onOpenReport)
+        }
+
         Section("Appearance") {
             Item("Theme", prefs.theme.displayName) { picker = Picker.Theme }
         }
@@ -215,6 +275,24 @@ fun SettingsScreen(
         Picker.Theme -> ChoiceDialog("Theme", ThemeMode.entries, prefs.theme, { it.displayName }, { picker = null }) {
             actions.setTheme(it); picker = null
         }
+        Picker.SilentMode -> ChoiceDialog(
+            "Silence with", SilenceMode.entries, prefs.silentMode, { "${it.displayName}: ${it.description}" }, { picker = null },
+        ) {
+            actions.setSilentMode(it)
+            picker = if (it.needsPolicyAccess && !dndAccess) Picker.DndAccess else null
+        }
+        Picker.SilentMinutes -> ChoiceDialog(
+            "For how long", UserPrefs.silentMinuteOptions, prefs.silentMinutes, { "$it minutes" }, { picker = null },
+        ) { actions.setSilentMinutes(it); picker = null }
+        Picker.JumuahMinutes -> ChoiceDialog(
+            "Jumu'ah", UserPrefs.jumuahMinuteOptions, prefs.silentJumuahMinutes, { "$it minutes" }, { picker = null },
+        ) { actions.setSilentJumuahMinutes(it); picker = null }
+        Picker.DndAccess -> DndAccessDialog(
+            mode = prefs.silentMode,
+            onDismiss = { picker = null },
+            onOpenSettings = { picker = null; context.openDndAccessSettings() },
+            onUseVibrate = { actions.setSilentMode(SilenceMode.VIBRATE); picker = null },
+        )
     }
 }
 
@@ -319,6 +397,32 @@ private fun <T> ChoiceDialog(
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Close", color = c.accent) } },
+    )
+}
+
+@Composable
+private fun DndAccessDialog(mode: SilenceMode, onDismiss: () -> Unit, onOpenSettings: () -> Unit, onUseVibrate: () -> Unit) {
+    val c = Salah.colors
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = c.surface,
+        title = { Text("Allow Do Not Disturb access", style = MaterialTheme.typography.titleLarge, color = c.text) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "To use ${mode.displayName.lowercase()} during prayer, Android needs you to let SalahSync change Do Not Disturb. " +
+                        "On the next screen, find SalahSync and switch it on, then come back.",
+                    style = MaterialTheme.typography.bodyMedium, color = c.text,
+                )
+                Text(
+                    "SalahSync only uses this during the minutes you chose, and always puts your sound back afterwards. " +
+                        "Until access is allowed, your phone is set to vibrate instead.",
+                    style = MaterialTheme.typography.bodySmall, color = c.textMuted,
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onOpenSettings) { Text("Open settings", color = c.accent) } },
+        dismissButton = { TextButton(onClick = onUseVibrate) { Text("Use vibrate", color = c.textMuted) } },
     )
 }
 

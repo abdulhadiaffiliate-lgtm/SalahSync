@@ -18,6 +18,7 @@ import com.salahsync.core.HighLatitude
 import com.salahsync.core.Method
 import com.salahsync.core.Prayer
 import com.salahsync.core.RegionDefaults
+import com.salahsync.core.SilenceMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -51,6 +52,12 @@ class SettingsRepository(private val context: Context) {
         val streak = intPreferencesKey("streak")
         val lastOpen = longPreferencesKey("last_open")
         val prayed = stringSetPreferencesKey("prayed")
+        val silentEnabled = booleanPreferencesKey("silent_enabled")
+        val silentMode = stringPreferencesKey("silent_mode")
+        val silentMinutes = intPreferencesKey("silent_minutes")
+        val silentJumuah = intPreferencesKey("silent_jumuah_minutes")
+        val silentPrayers = stringSetPreferencesKey("silent_prayers")
+        val weeklyReport = booleanPreferencesKey("weekly_report")
     }
 
     val prefs: Flow<UserPrefs> = context.dataStore.data.map { it.toUserPrefs() }
@@ -87,7 +94,14 @@ class SettingsRepository(private val context: Context) {
             theme = this[K.theme].toEnum(ThemeMode.DARK),
             streakDays = this[K.streak] ?: 0,
             lastOpenEpochDay = this[K.lastOpen] ?: -1,
-            prayed = this[K.prayed] ?: emptySet(),
+            silentEnabled = this[K.silentEnabled] ?: false,
+            silentMode = this[K.silentMode].toEnum(SilenceMode.DO_NOT_DISTURB),
+            silentMinutes = this[K.silentMinutes] ?: 20,
+            silentJumuahMinutes = this[K.silentJumuah] ?: 60,
+            silentPrayers = this[K.silentPrayers]
+                ?.mapNotNull { runCatching { Prayer.valueOf(it) }.getOrNull() }?.filter { it.isFard }?.toSet()
+                ?: Prayer.fard.toSet(),
+            weeklyReport = this[K.weeklyReport] ?: true,
         )
     }
 
@@ -180,6 +194,21 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setTheme(mode: ThemeMode) = edit { it[K.theme] = mode.name }
 
+    suspend fun setSilentEnabled(on: Boolean) = edit { it[K.silentEnabled] = on }
+
+    suspend fun setSilentMode(mode: SilenceMode) = edit { it[K.silentMode] = mode.name }
+
+    suspend fun setSilentMinutes(minutes: Int) = edit { it[K.silentMinutes] = minutes.coerceIn(5, 120) }
+
+    suspend fun setSilentJumuahMinutes(minutes: Int) = edit { it[K.silentJumuah] = minutes.coerceIn(5, 180) }
+
+    suspend fun setSilentFor(prayer: Prayer, on: Boolean) = edit { p ->
+        val current = p[K.silentPrayers] ?: Prayer.fard.map { it.name }.toSet()
+        p[K.silentPrayers] = if (on) current + prayer.name else current - prayer.name
+    }
+
+    suspend fun setWeeklyReport(on: Boolean) = edit { it[K.weeklyReport] = on }
+
     /** Counts consecutive days the app was opened. */
     suspend fun recordOpen(today: LocalDate = LocalDate.now()) = edit { p ->
         val day = today.toEpochDay()
@@ -192,12 +221,16 @@ class SettingsRepository(private val context: Context) {
         p[K.lastOpen] = day
     }
 
-    suspend fun togglePrayed(date: LocalDate, prayer: Prayer) = edit { p ->
-        val key = UserPrefs.prayedKey(date.toString(), prayer)
-        val set = p[K.prayed].orEmpty()
-        // Keep only the last 60 days so the set stays small.
-        val cutoff = date.minusDays(60).toString()
-        val pruned = set.filter { it.substringBefore(':') >= cutoff }.toSet()
-        p[K.prayed] = if (key in pruned) pruned - key else pruned + key
+    /**
+     * Prayer ticks used to live here. They now belong to the tracker's own database;
+     * this hands over any that are left, once, and clears them.
+     */
+    suspend fun takeLegacyPrayed(): Set<String> {
+        var taken: Set<String> = emptySet()
+        edit { p ->
+            taken = p[K.prayed].orEmpty()
+            p.remove(K.prayed)
+        }
+        return taken
     }
 }

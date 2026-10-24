@@ -35,7 +35,17 @@ import com.salahsync.ui.theme.ArabicStyle
 import com.salahsync.ui.theme.Salah
 
 @Composable
-fun MoreScreen(onTasbih: () -> Unit, onSettings: () -> Unit, onAbout: () -> Unit, onComingSoon: (String) -> Unit) {
+fun MoreScreen(
+    onTasbih: () -> Unit,
+    onAdhkar: () -> Unit,
+    onDuas: () -> Unit,
+    onGuides: () -> Unit,
+    onTracker: () -> Unit,
+    onQuran: () -> Unit,
+    onHadith: () -> Unit,
+    onSettings: () -> Unit,
+    onAbout: () -> Unit,
+) {
     val c = Salah.colors
     Column(
         Modifier.fillMaxSize().background(c.background).verticalScroll(rememberScrollState()).statusBarsPadding()
@@ -44,8 +54,12 @@ fun MoreScreen(onTasbih: () -> Unit, onSettings: () -> Unit, onAbout: () -> Unit
     ) {
         Text("More", style = MaterialTheme.typography.headlineLarge, color = c.text, modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
         Entry("Tasbih", "Dhikr counter: 33, 33, 34", SalahIcons.Beads, onTasbih)
-        Entry("Quran", "Coming in the next update", SalahIcons.Book) { onComingSoon("Quran") }
-        Entry("Duas and adhkar", "Coming soon", SalahIcons.Heart) { onComingSoon("Duas and adhkar") }
+        Entry("Quran", "Read, listen and keep your place", SalahIcons.Book, onQuran)
+        Entry("Hadith", "Bukhari, Muslim, Abu Dawud and Tirmidhi", SalahIcons.Notes, onHadith)
+        Entry("Morning and evening adhkar", "With the hadith source for each", SalahIcons.Heart, onAdhkar)
+        Entry("Duas", "Daily supplications from the Sunnah", SalahIcons.Star, onDuas)
+        Entry("Wudu, Ghusl and Rakats", "Step-by-step guides, Hanafi or Shafi'i", SalahIcons.Notes, onGuides)
+        Entry("Prayer tracker", "Daily prayers and Qada, on this phone only", SalahIcons.Check, onTracker)
         Entry("Settings", "Prayer times, alerts, appearance", SalahIcons.Sliders, onSettings)
         Entry("About", "Sources, licenses and privacy", SalahIcons.Shield, onAbout)
     }
@@ -110,8 +124,9 @@ fun AboutScreen() {
                 Text("Your data is safe", style = MaterialTheme.typography.titleLarge, color = c.text)
             }
             Text(
-                "Your name, settings and prayer history stay on this phone. There is no account and no tracking. " +
-                    "The only thing sent online is your approximate coordinates, to fetch the AlAdhan timetable, and you can turn that off.",
+                "Your name, settings, bookmarks, prayer history and Qada stay on this phone. There is no account and no tracking. " +
+                    "The only things sent online are your approximate coordinates, to fetch the AlAdhan timetable (you can turn that off), " +
+                    "and requests for recitation audio when you listen.",
                 style = MaterialTheme.typography.bodyMedium, color = c.textMuted,
             )
         }
@@ -119,13 +134,30 @@ fun AboutScreen() {
         EyebrowText("Sources", color = c.accent)
         Source("Prayer times", "AlAdhan API (aladhan.com) online, and the Adhan library by Batoul Apps (MIT License) offline.")
         Source("Hijri calendar", "Umm al-Qura calendar from java.time, with a local moon-sighting adjustment.")
-        Source("Quranic text", "Uthmani script. Translations are a short starter set.")
+        Source("Quranic text", "Tanzil Quran Text (Uthmani, version 1.1), copyright 2007-2021 Tanzil Project, tanzil.net. Creative Commons Attribution 3.0; reproduced verbatim.")
+        Source("English translation", "Saheeh International, published by Noor International Center. From QuranEnc.com, version 1.1.2, reproduced verbatim.")
+        Source("Urdu translation", "Maulana Muhammad Junagarhi, with notes by Hafiz Salahuddin Yusuf. From QuranEnc.com, version 1.1.3, reproduced verbatim.")
+        Source("Recitations", "Streamed per ayah from EveryAyah.com. Mishary Rashid Alafasy's recitation of Al-Fatihah and the last 32 surahs is included for offline listening.")
+        Source("Surah and juz data", "Tanzil Project quran-data metadata.")
+        Source(
+            "Hadith",
+            "Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud and Jami' at-Tirmidhi in Arabic, English and Urdu, from the hadith-api dataset by " +
+                "Fawaz Ahmed (github.com/fawazahmed0/hadith-api), released under the Unlicense. Reproduced unchanged from one fixed version, " +
+                "each file checked against its fingerprint. English: Muhsin Khan (Bukhari), Abdul Hamid Siddiqui (Muslim). Gradings for Abu Dawud " +
+                "and Tirmidhi are as the dataset gives them. Muslim is numbered as on sunnah.com.",
+        )
+        Source("Adhkar", "Morning and evening adhkar from Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud and Jami' at-Tirmidhi, with gradings as given on sunnah.com. Each dhikr's ⓘ shows its source.")
+        Source("Duas", "Daily supplications quoted in the wording of Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud, Jami' at-Tirmidhi and Sunan Ibn Majah, with gradings as given on sunnah.com.")
+        Source("Wudu, Ghusl and Rakats", "Steps from the hadith of 'Uthman, 'Abdullah ibn Zayd, 'A'ishah and Maymunah in Sahih al-Bukhari. Rulings and rak'ah counts from Nur al-Idah (Hanafi) and Minhaj at-Talibin (Shafi'i).")
 
         EyebrowText("Open-source licenses", color = c.accent)
         Source("Adhan for Java", "Copyright Batoul Apps. MIT License.")
         Source("Cormorant Garamond", "Copyright 2015 The Cormorant Project Authors. SIL Open Font License 1.1.")
         Source("Manrope", "Copyright 2019 The Manrope Project Authors. SIL Open Font License 1.1.")
         Source("Amiri Quran", "Copyright 2010-2022 The Amiri Project Authors. SIL Open Font License 1.1.")
+        Source("Noto Nastaliq Urdu", "Copyright 2022 The Noto Project Authors. SIL Open Font License 1.1.")
+        Source("AndroidX Media3", "Copyright The Android Open Source Project. Apache License 2.0.")
+        Source("AndroidX Room", "Copyright The Android Open Source Project. Apache License 2.0.")
         Source("AndroidX and Jetpack Compose", "Copyright The Android Open Source Project. Apache License 2.0.")
         Source("Kotlin and kotlinx.coroutines", "Copyright JetBrains s.r.o. Apache License 2.0.")
     }

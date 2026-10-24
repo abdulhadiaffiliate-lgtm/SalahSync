@@ -10,6 +10,7 @@ import com.salahsync.core.Hijri
 import com.salahsync.core.HijriDate
 import com.salahsync.core.Method
 import com.salahsync.core.Prayer
+import com.salahsync.core.SilenceMode
 import com.salahsync.data.AlertStyle
 import com.salahsync.data.SavedLocation
 import com.salahsync.data.ThemeMode
@@ -63,7 +64,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             // Recalculate and reschedule only when settings that affect times or alerts change.
             settings.prefs
-                .map { it.copy(streakDays = 0, lastOpenEpochDay = 0, prayed = emptySet(), name = "", theme = ThemeMode.DARK) }
+                .map { it.copy(streakDays = 0, lastOpenEpochDay = 0, name = "", theme = ThemeMode.DARK) }
                 .distinctUntilChanged()
                 .collect { recalc(settings.current()) }
         }
@@ -113,7 +114,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setDuaReminder(on: Boolean) = io { settings.setDuaReminder(on) }
     fun setUseOnlineTimes(on: Boolean) = io { settings.setUseOnlineTimes(on) }
     fun setTheme(t: ThemeMode) = io { settings.setTheme(t) }
-    fun togglePrayed(date: LocalDate, p: Prayer) = io { settings.togglePrayed(date, p) }
+    fun setSilentEnabled(on: Boolean) = io { settings.setSilentEnabled(on) }
+    fun setSilentMode(m: SilenceMode) = io { settings.setSilentMode(m) }
+    fun setSilentMinutes(m: Int) = io { settings.setSilentMinutes(m) }
+    fun setSilentJumuahMinutes(m: Int) = io { settings.setSilentJumuahMinutes(m) }
+    fun setSilentFor(p: Prayer, on: Boolean) = io { settings.setSilentFor(p, on) }
+    fun setWeeklyReport(on: Boolean) = io { settings.setWeeklyReport(on) }
+
+    fun hasDndAccess(): Boolean = salah.silence.hasPolicyAccess()
 
     /** Rebuilds alarms, e.g. after the user grants the exact-alarm permission. */
     fun rescheduleNow() = io { prefs.value?.let { salah.scheduler.reschedule(it) } }
