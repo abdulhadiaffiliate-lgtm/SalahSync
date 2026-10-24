@@ -38,6 +38,8 @@ import com.salahsync.ui.theme.Salah
 fun MoreScreen(
     onTasbih: () -> Unit,
     onAdhkar: () -> Unit,
+    onDuas: () -> Unit,
+    onGuides: () -> Unit,
     onTracker: () -> Unit,
     onQuran: () -> Unit,
     onSettings: () -> Unit,
@@ -53,6 +55,8 @@ fun MoreScreen(
         Entry("Tasbih", "Dhikr counter: 33, 33, 34", SalahIcons.Beads, onTasbih)
         Entry("Quran", "Read, listen and keep your place", SalahIcons.Book, onQuran)
         Entry("Morning and evening adhkar", "With the hadith source for each", SalahIcons.Heart, onAdhkar)
+        Entry("Duas", "Daily supplications from the Sunnah", SalahIcons.Star, onDuas)
+        Entry("Wudu, Ghusl and Rakats", "Step-by-step guides, Hanafi or Shafi'i", SalahIcons.Notes, onGuides)
         Entry("Prayer tracker", "Daily prayers and Qada, on this phone only", SalahIcons.Check, onTracker)
         Entry("Settings", "Prayer times, alerts, appearance", SalahIcons.Sliders, onSettings)
         Entry("About", "Sources, licenses and privacy", SalahIcons.Shield, onAbout)
@@ -134,6 +138,8 @@ fun AboutScreen() {
         Source("Recitations", "Streamed per ayah from EveryAyah.com. Mishary Rashid Alafasy's recitation of Al-Fatihah and the last 32 surahs is included for offline listening.")
         Source("Surah and juz data", "Tanzil Project quran-data metadata.")
         Source("Adhkar", "Morning and evening adhkar from Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud and Jami' at-Tirmidhi, with gradings as given on sunnah.com. Each dhikr's ⓘ shows its source.")
+        Source("Duas", "Daily supplications quoted in the wording of Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud, Jami' at-Tirmidhi and Sunan Ibn Majah, with gradings as given on sunnah.com.")
+        Source("Wudu, Ghusl and Rakats", "Steps from the hadith of 'Uthman, 'Abdullah ibn Zayd, 'A'ishah and Maymunah in Sahih al-Bukhari. Rulings and rak'ah counts from Nur al-Idah (Hanafi) and Minhaj at-Talibin (Shafi'i).")
 
         EyebrowText("Open-source licenses", color = c.accent)
         Source("Adhan for Java", "Copyright Batoul Apps. MIT License.")

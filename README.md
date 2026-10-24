@@ -28,6 +28,12 @@ v1.0 Core, v1.1 Quran, v1.2 Tracker and Adhkar, and v1.3 Silent mode and Weekly 
 - Weekly report: every Friday at 9:00 AM, a notification sums up the Friday-to-Thursday week, and the report screen shows prayers on time, late and missed, a day-by-prayer grid, each prayer's split, Qada owed and streaks, and can be shared as an image. It is worked out from the local tracker only.
 - A tick made after its prayer's time has ended (Fajr at sunrise, Dhuhr at Asr, Asr at Maghrib, Maghrib at Isha, Isha at the next Fajr) is stored as late; press and hold a tick to switch it between on time and late. Ticks from before v1.3 count as on time (tracker database version 2 adds the `late` and `markedAt` columns).
 
+## Duas and worship guides
+
+- 28 daily duas in nine groups (sleep, purification, home and mosque, food and fasting, after prayer, travel, hardship, everyday moments, and general supplications). Each shows the Arabic, an English meaning and the occasion; the info icon gives the book, hadith number, narrator and grading, linked to sunnah.com. The list is in `core/.../duas/Duas.kt`.
+- Step-by-step Wudu and Ghusl, each step marked Fard or Sunnah for the chosen school, with its hadith or Quran source (`core/.../guides/Guides.kt`).
+- Rak'ahs of the five prayers and Jumu'ah, Hanafi or Shafi'i, split into sunnah before, fard, sunnah after and Witr (`core/.../guides/Rakats.kt`). The school defaults to the Asr setting and can be switched on the screen.
+
 ## Build
 
 Requirements: JDK 17 and the Android SDK (API 35).
