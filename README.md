@@ -20,6 +20,12 @@ v1.0 Core, v1.1 Quran and v1.2 Tracker and Adhkar are in progress. See the produ
 - The record lives in a local Room database (`salah_tracker.db`) that is never uploaded and is excluded from cloud backup and device transfer (`res/xml/backup_rules.xml`, `res/xml/data_extraction_rules.xml`).
 - Morning and evening adhkar with tap-to-count; hold Ayat al-Kursi or the three Quls for the full text. Each dhikr's info icon shows its source book, hadith number, narrator and grading, linked to sunnah.com. The list is in `core/.../adhkar/Adhkar.kt`.
 
+## Duas and worship guides
+
+- 28 daily duas in nine groups (sleep, purification, home and mosque, food and fasting, after prayer, travel, hardship, everyday moments, and general supplications). Each shows the Arabic, an English meaning and the occasion; the info icon gives the book, hadith number, narrator and grading, linked to sunnah.com. The list is in `core/.../duas/Duas.kt`.
+- Step-by-step Wudu and Ghusl, each step marked Fard or Sunnah for the chosen school, with its hadith or Quran source (`core/.../guides/Guides.kt`).
+- Rak'ahs of the five prayers and Jumu'ah, Hanafi or Shafi'i, split into sunnah before, fard, sunnah after and Witr (`core/.../guides/Rakats.kt`). The school defaults to the Asr setting and can be switched on the screen.
+
 ## Build
 
 Requirements: JDK 17 and the Android SDK (API 35).
