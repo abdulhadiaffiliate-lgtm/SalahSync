@@ -46,7 +46,6 @@ data class UserPrefs(
     val theme: ThemeMode = ThemeMode.DARK,
     val streakDays: Int = 0,
     val lastOpenEpochDay: Long = -1,
-    val prayed: Set<String> = emptySet(),
 ) {
     val prayerSettings: PrayerSettings
         get() = PrayerSettings(method, asrSchool, highLatitude, offsets)
@@ -57,8 +56,5 @@ data class UserPrefs(
         val defaultAlerts: Map<Prayer, AlertStyle> = Prayer.entries.associateWith {
             if (it == Prayer.SUNRISE) AlertStyle.OFF else AlertStyle.ADHAN
         }
-
-        /** Key for the prayed-tracker set: "2026-10-23:ASR". */
-        fun prayedKey(epochDayIso: String, prayer: Prayer) = "$epochDayIso:${prayer.name}"
     }
 }

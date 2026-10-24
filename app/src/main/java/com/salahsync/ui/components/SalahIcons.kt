@@ -75,5 +75,8 @@ object SalahIcons {
     val Headphones = icon("headphones", "M4,15 V12 A8,8 0 0 1 20,12 V15", "M4,14 H7 V20 H5 A1,1 0 0 1 4,19 Z", "M20,14 H17 V20 H19 A1,1 0 0 0 20,19 Z")
     val ChevronDown = icon("chevron_down", "M5,9 L12,16 L19,9")
     val TextSize = icon("text_size", "M4,18 L9,6 L14,18", "M5.7,14 H12.3", "M15,18 L17.5,11.5 L20,18", "M15.8,16 H19.2")
+    val Info = icon("info", circle(12f, 12f, 9f), "M12,11 V16.5", "M12,7.6 V7.7", stroke = 1.6f)
+    val Minus = icon("minus", "M6,12 H18")
+    val Plus = icon("plus", "M12,6 V18", "M6,12 H18")
     val Waves = icon("waves", "M4,10 V14", "M8,7 V17", "M12,4 V20", "M16,8 V16", "M20,11 V13")
 }

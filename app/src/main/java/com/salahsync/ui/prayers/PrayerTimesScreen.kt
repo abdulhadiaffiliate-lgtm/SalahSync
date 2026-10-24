@@ -66,7 +66,10 @@ fun PrayerTimesScreen(
     now: ZonedDateTime,
     loadTimes: suspend (LocalDate) -> DayTimes?,
     hijriFor: (LocalDate) -> HijriDate,
+    isPrayed: (LocalDate, Prayer) -> Boolean,
     onTogglePrayed: (LocalDate, Prayer) -> Unit,
+    qadaOwed: Int,
+    onOpenTracker: () -> Unit,
     onAlertChange: (Prayer, AlertStyle) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -138,7 +141,8 @@ fun PrayerTimesScreen(
                         time = formatTime(t[p]),
                         isNext = p == next,
                         dimmed = (passed || p == Prayer.SUNRISE) && p != next,
-                        prayed = UserPrefs.prayedKey(date.toString(), p) in prefs.prayed,
+                        prayed = isPrayed(date, p),
+                        canTick = !date.isAfter(now.toLocalDate()),
                         alert = prefs.alertFor(p),
                         onTogglePrayed = { onTogglePrayed(date, p) },
                         onCycleAlert = {
@@ -152,6 +156,24 @@ fun PrayerTimesScreen(
                     )
                 }
             }
+        }
+
+        Row(
+            Modifier.padding(horizontal = 20.dp).padding(top = 10.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp))
+                .border(1.dp, c.hairline, RoundedCornerShape(18.dp)).clickable(role = Role.Button, onClick = onOpenTracker)
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Icon(SalahIcons.Check, contentDescription = null, tint = c.accent, modifier = Modifier.size(20.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Prayer tracker", style = MaterialTheme.typography.titleMedium, color = c.text)
+                Text(
+                    if (qadaOwed == 0) "No Qada owed" else "$qadaOwed Qada ${if (qadaOwed == 1) "prayer" else "prayers"} to make up",
+                    style = MaterialTheme.typography.bodySmall, color = c.textMuted,
+                )
+            }
+            Icon(SalahIcons.ChevronRight, contentDescription = null, tint = c.textMuted, modifier = Modifier.size(16.dp))
         }
 
         Row(
@@ -185,6 +207,7 @@ private fun PrayerRow(
     isNext: Boolean,
     dimmed: Boolean,
     prayed: Boolean,
+    canTick: Boolean,
     alert: AlertStyle,
     onTogglePrayed: () -> Unit,
     onCycleAlert: () -> Unit,
@@ -197,7 +220,7 @@ private fun PrayerRow(
     }
     Row(mod.alpha(if (dimmed) 0.6f else 1f).padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         if (prayer.isFard) {
-            IconButton(onClick = onTogglePrayed) {
+            IconButton(onClick = onTogglePrayed, enabled = canTick) {
                 Icon(
                     if (prayed) SalahIcons.Check else SalahIcons.Circle,
                     contentDescription = if (prayed) "$label prayed, tap to undo" else "Mark $label as prayed",

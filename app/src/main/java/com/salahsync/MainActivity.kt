@@ -50,9 +50,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.salahsync.adhkar.AdhkarViewModel
 import com.salahsync.core.quran.AyahRef
 import com.salahsync.data.UserPrefs
 import com.salahsync.quran.QuranViewModel
+import com.salahsync.tracker.TrackerViewModel
+import com.salahsync.ui.adhkar.AdhkarScreen
 import com.salahsync.ui.components.SalahIcons
 import com.salahsync.ui.home.HomeScreen
 import com.salahsync.ui.more.AboutScreen
@@ -70,6 +73,8 @@ import com.salahsync.ui.settings.SettingsScreen
 import com.salahsync.ui.tasbih.TasbihScreen
 import com.salahsync.ui.theme.Salah
 import com.salahsync.ui.theme.SalahSyncTheme
+import com.salahsync.ui.tracker.TrackerActions
+import com.salahsync.ui.tracker.TrackerScreen
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
@@ -132,6 +137,8 @@ private object Routes {
     const val QIBLA = "qibla"
     const val MORE = "more"
     const val TASBIH = "tasbih"
+    const val TRACKER = "tracker"
+    const val ADHKAR = "adhkar"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
     const val SOON = "soon/{feature}"
@@ -152,6 +159,8 @@ private val tabs = listOf(
 private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableStateFlow<Boolean>) {
     val nav = rememberNavController()
     val quran: QuranViewModel = viewModel()
+    val tracker: TrackerViewModel = viewModel()
+    val trackerState by tracker.state.collectAsStateWithLifecycle()
     val playback by quran.playback.collectAsStateWithLifecycle()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route
@@ -223,7 +232,10 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     now = now,
                     loadTimes = vm::timesFor,
                     hijriFor = vm::hijriFor,
-                    onTogglePrayed = vm::togglePrayed,
+                    isPrayed = { d, p -> trackerState?.isPrayed(d, p) == true },
+                    onTogglePrayed = tracker::togglePrayed,
+                    qadaOwed = trackerState?.totalOwed ?: 0,
+                    onOpenTracker = { nav.navigate(Routes.TRACKER) },
                     onAlertChange = vm::setAlert,
                     onOpenSettings = { nav.navigate(Routes.SETTINGS) },
                 )
@@ -232,13 +244,29 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
             composable(Routes.MORE) {
                 MoreScreen(
                     onTasbih = { nav.navigate(Routes.TASBIH) },
+                    onAdhkar = { nav.navigate(Routes.ADHKAR) },
+                    onTracker = { nav.navigate(Routes.TRACKER) },
                     onQuran = { nav.switchTab(Routes.QURAN) },
                     onSettings = { nav.navigate(Routes.SETTINGS) },
                     onAbout = { nav.navigate(Routes.ABOUT) },
-                    onComingSoon = { nav.navigate(Routes.soon(it)) },
                 )
             }
             composable(Routes.TASBIH) { TasbihScreen() }
+            composable(Routes.TRACKER) {
+                TrackerScreen(
+                    state = trackerState,
+                    actions = TrackerActions(
+                        togglePrayed = tracker::togglePrayed,
+                        logMadeUp = { tracker.logMadeUp(it) },
+                        undoMadeUp = { tracker.undoMadeUp(it) },
+                        setEarlier = { p, n -> tracker.setEarlier(p, n) },
+                    ),
+                )
+            }
+            composable(Routes.ADHKAR) {
+                val adhkar: AdhkarViewModel = viewModel()
+                AdhkarScreen(adhkar)
+            }
             composable(Routes.SETTINGS) {
                 SettingsScreen(
                     prefs = prefs,

@@ -87,7 +87,6 @@ class SettingsRepository(private val context: Context) {
             theme = this[K.theme].toEnum(ThemeMode.DARK),
             streakDays = this[K.streak] ?: 0,
             lastOpenEpochDay = this[K.lastOpen] ?: -1,
-            prayed = this[K.prayed] ?: emptySet(),
         )
     }
 
@@ -192,12 +191,16 @@ class SettingsRepository(private val context: Context) {
         p[K.lastOpen] = day
     }
 
-    suspend fun togglePrayed(date: LocalDate, prayer: Prayer) = edit { p ->
-        val key = UserPrefs.prayedKey(date.toString(), prayer)
-        val set = p[K.prayed].orEmpty()
-        // Keep only the last 60 days so the set stays small.
-        val cutoff = date.minusDays(60).toString()
-        val pruned = set.filter { it.substringBefore(':') >= cutoff }.toSet()
-        p[K.prayed] = if (key in pruned) pruned - key else pruned + key
+    /**
+     * Prayer ticks used to live here. They now belong to the tracker's own database;
+     * this hands over any that are left, once, and clears them.
+     */
+    suspend fun takeLegacyPrayed(): Set<String> {
+        var taken: Set<String> = emptySet()
+        edit { p ->
+            taken = p[K.prayed].orEmpty()
+            p.remove(K.prayed)
+        }
+        return taken
     }
 }

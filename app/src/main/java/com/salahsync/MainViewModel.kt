@@ -63,7 +63,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             // Recalculate and reschedule only when settings that affect times or alerts change.
             settings.prefs
-                .map { it.copy(streakDays = 0, lastOpenEpochDay = 0, prayed = emptySet(), name = "", theme = ThemeMode.DARK) }
+                .map { it.copy(streakDays = 0, lastOpenEpochDay = 0, name = "", theme = ThemeMode.DARK) }
                 .distinctUntilChanged()
                 .collect { recalc(settings.current()) }
         }
@@ -113,7 +113,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setDuaReminder(on: Boolean) = io { settings.setDuaReminder(on) }
     fun setUseOnlineTimes(on: Boolean) = io { settings.setUseOnlineTimes(on) }
     fun setTheme(t: ThemeMode) = io { settings.setTheme(t) }
-    fun togglePrayed(date: LocalDate, p: Prayer) = io { settings.togglePrayed(date, p) }
 
     /** Rebuilds alarms, e.g. after the user grants the exact-alarm permission. */
     fun rescheduleNow() = io { prefs.value?.let { salah.scheduler.reschedule(it) } }
