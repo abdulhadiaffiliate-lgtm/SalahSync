@@ -84,6 +84,7 @@ import com.salahsync.ui.settings.SettingsScreen
 import com.salahsync.ui.tasbih.TasbihScreen
 import com.salahsync.ui.theme.Salah
 import com.salahsync.ui.theme.SalahSyncTheme
+import com.salahsync.ui.tracker.ReportScreen
 import com.salahsync.ui.tracker.TrackerActions
 import com.salahsync.ui.tracker.TrackerScreen
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -94,14 +95,19 @@ class MainActivity : ComponentActivity() {
     /** Set when the recitation notification is tapped, to open the full player. */
     private val openPlayer = MutableStateFlow(false)
 
+    /** Set when the Friday report notification is tapped. */
+    private val openReport = MutableStateFlow(false)
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) openPlayer.value = true
+        if (intent.getBooleanExtra(EXTRA_OPEN_REPORT, false)) openReport.value = true
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) openPlayer.value = true
+        if (savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_REPORT, false)) openReport.value = true
         setContent {
             val prefs by vm.prefs.collectAsStateWithLifecycle()
             val p = prefs ?: return@setContent
@@ -127,7 +133,7 @@ class MainActivity : ComponentActivity() {
                         onFinish = vm::completeOnboarding,
                     )
                 } else {
-                    AppShell(vm, p, openPlayer)
+                    AppShell(vm, p, openPlayer, openReport)
                 }
             }
         }
@@ -135,6 +141,7 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_OPEN_PLAYER = "com.salahsync.OPEN_PLAYER"
+        const val EXTRA_OPEN_REPORT = "com.salahsync.OPEN_REPORT"
     }
 }
 
@@ -149,6 +156,7 @@ private object Routes {
     const val MORE = "more"
     const val TASBIH = "tasbih"
     const val TRACKER = "tracker"
+    const val REPORT = "tracker/report"
     const val ADHKAR = "adhkar"
     const val HADITH = "hadith"
     const val HADITH_BOOK = "hadith/book/{book}"
@@ -176,7 +184,7 @@ private val tabs = listOf(
 )
 
 @Composable
-private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableStateFlow<Boolean>) {
+private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableStateFlow<Boolean>, openReport: MutableStateFlow<Boolean>) {
     val nav = rememberNavController()
     val quran: QuranViewModel = viewModel()
     val tracker: TrackerViewModel = viewModel()
@@ -192,6 +200,13 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
         if (wantsPlayer && playback.active) {
             if (route != Routes.PLAYER) nav.navigate(Routes.PLAYER) { launchSingleTop = true }
             openPlayer.value = false
+        }
+    }
+    val wantsReport by openReport.collectAsStateWithLifecycle()
+    LaunchedEffect(wantsReport) {
+        if (wantsReport) {
+            if (route != Routes.REPORT) nav.navigate(Routes.REPORT) { launchSingleTop = true }
+            openReport.value = false
         }
     }
     val showMini = playback.active && route != Routes.PLAYER
@@ -322,8 +337,15 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                         logMadeUp = { tracker.logMadeUp(it) },
                         undoMadeUp = { tracker.undoMadeUp(it) },
                         setEarlier = { p, n -> tracker.setEarlier(p, n) },
+                        toggleLate = { d, p -> tracker.toggleLate(d, p) },
+                        openReport = { nav.navigate(Routes.REPORT) },
                     ),
                 )
+            }
+            composable(Routes.REPORT) {
+                ReportScreen(trackerState, onOpenTracker = {
+                    if (!nav.popBackStack(Routes.TRACKER, inclusive = false)) nav.navigate(Routes.TRACKER)
+                })
             }
             composable(Routes.ADHKAR) {
                 val adhkar: AdhkarViewModel = viewModel()
@@ -338,6 +360,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     prefs = prefs,
                     locating = locating,
                     canScheduleExact = vm.canScheduleExact(),
+                    checkDndAccess = vm::hasDndAccess,
                     actions = SettingsActions(
                         setName = vm::setName,
                         locate = { vm.locate() },
@@ -355,8 +378,15 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                         setQuranReminder = vm::setQuranReminder,
                         setDuaReminder = vm::setDuaReminder,
                         setTheme = vm::setTheme,
+                        setSilentEnabled = vm::setSilentEnabled,
+                        setSilentMode = vm::setSilentMode,
+                        setSilentMinutes = vm::setSilentMinutes,
+                        setSilentJumuahMinutes = vm::setSilentJumuahMinutes,
+                        setSilentFor = vm::setSilentFor,
+                        setWeeklyReport = vm::setWeeklyReport,
                     ),
                     onOpenAbout = { nav.navigate(Routes.ABOUT) },
+                    onOpenReport = { nav.navigate(Routes.REPORT) },
                 )
             }
             composable(Routes.ABOUT) { AboutScreen() }

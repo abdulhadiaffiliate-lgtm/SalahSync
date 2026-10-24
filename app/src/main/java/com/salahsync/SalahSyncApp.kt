@@ -8,6 +8,7 @@ import com.salahsync.hadith.HadithLibrary
 import com.salahsync.hadith.HadithStore
 import com.salahsync.notify.Notifications
 import com.salahsync.notify.PrayerScheduler
+import com.salahsync.notify.PrayerSilence
 import com.salahsync.quran.QuranRepository
 import com.salahsync.quran.QuranStore
 import com.salahsync.quran.audio.AudioLibrary
@@ -22,6 +23,8 @@ class SalahSyncApp : Application() {
     lateinit var prayers: PrayerRepository
         private set
     lateinit var scheduler: PrayerScheduler
+        private set
+    lateinit var silence: PrayerSilence
         private set
     lateinit var location: LocationProvider
         private set
@@ -46,7 +49,8 @@ class SalahSyncApp : Application() {
         super.onCreate()
         settings = SettingsRepository(this)
         prayers = PrayerRepository(this)
-        scheduler = PrayerScheduler(this, prayers)
+        silence = PrayerSilence(this)
+        scheduler = PrayerScheduler(this, prayers, silence)
         location = LocationProvider(this)
         quran = QuranRepository(this)
         quranStore = QuranStore(this)

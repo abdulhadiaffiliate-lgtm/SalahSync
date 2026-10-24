@@ -7,6 +7,7 @@
         <exclude domain="database" path="salah_tracker.db-shm" />
         <exclude domain="database" path="salah_tracker.db-wal" />
         <exclude domain="database" path="salah_tracker.db-journal" />
+        <exclude domain="sharedpref" path="prayer_silence.xml" />
         <exclude domain="database" path="hadith.db" />
         <exclude domain="database" path="hadith.db-shm" />
         <exclude domain="database" path="hadith.db-wal" />
@@ -17,6 +18,7 @@
         <exclude domain="database" path="salah_tracker.db-shm" />
         <exclude domain="database" path="salah_tracker.db-wal" />
         <exclude domain="database" path="salah_tracker.db-journal" />
+        <exclude domain="sharedpref" path="prayer_silence.xml" />
         <exclude domain="database" path="hadith.db" />
         <exclude domain="database" path="hadith.db-shm" />
         <exclude domain="database" path="hadith.db-wal" />

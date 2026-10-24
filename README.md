@@ -4,7 +4,7 @@ An Android app that reminds you of the five daily prayers, with accurate times f
 
 ## Status
 
-v1.0 Core, v1.1 Quran, v1.2 Tracker and Adhkar, and v1.3 Hadith are in progress. See the product plan for the full roadmap (word-by-word, tafseer and more come in later releases).
+v1.0 Core, v1.1 Quran, v1.2 Tracker and Adhkar, and v1.3 Silent mode, Weekly report and Hadith are in progress. See the product plan for the full roadmap (word-by-word, tafseer and more come in later releases).
 
 ## Quran (v1.1)
 
@@ -19,6 +19,14 @@ v1.0 Core, v1.1 Quran, v1.2 Tracker and Adhkar, and v1.3 Hadith are in progress.
 - Tick each of the five prayers as prayed. Any prayer not ticked by the end of its day counts as Qada, per prayer; log each Qada you make up, and add missed prayers from before you started tracking.
 - The record lives in a local Room database (`salah_tracker.db`) that is never uploaded and is excluded from cloud backup and device transfer (`res/xml/backup_rules.xml`, `res/xml/data_extraction_rules.xml`).
 - Morning and evening adhkar with tap-to-count; hold Ayat al-Kursi or the three Quls for the full text. Each dhikr's info icon shows its source book, hadith number, narrator and grading, linked to sunnah.com. The list is in `core/.../adhkar/Adhkar.kt`.
+
+## Silent mode and weekly report (v1.3)
+
+- Silent during prayer: when each chosen prayer begins, SalahSync turns on Do Not Disturb (priority only, so alarms and starred contacts still come through), silent or vibrate for the minutes you choose (a separate length for Jumu'ah), then puts the sound back by itself. It starts 30 seconds after the prayer time so the adhan is not cut off.
+- Do Not Disturb and silent need Android's Do Not Disturb access. Settings explains this and opens the system screen; until access is allowed the phone is set to vibrate instead.
+- The sound state from before prayer is saved on the phone (`prayer_silence` preferences, left out of backups), so a reboot, update or killed app never leaves the phone stuck on silent: on boot and on every reschedule the sound is restored if the window is over, or the end alarm is re-armed. If you change the sound yourself during prayer, SalahSync leaves your choice alone. An ongoing notification shows while the phone is quiet, with a button to turn the sound back on.
+- Weekly report: every Friday at 9:00 AM, a notification sums up the Friday-to-Thursday week, and the report screen shows prayers on time, late and missed, a day-by-prayer grid, each prayer's split, Qada owed and streaks, and can be shared as an image. It is worked out from the local tracker only.
+- A tick made after its prayer's time has ended (Fajr at sunrise, Dhuhr at Asr, Asr at Maghrib, Maghrib at Isha, Isha at the next Fajr) is stored as late; press and hold a tick to switch it between on time and late. Ticks from before v1.3 count as on time (tracker database version 2 adds the `late` and `markedAt` columns).
 
 ## Hadith (v1.3)
 

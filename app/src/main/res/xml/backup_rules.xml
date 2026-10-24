@@ -6,6 +6,8 @@
     <exclude domain="database" path="salah_tracker.db-shm" />
     <exclude domain="database" path="salah_tracker.db-wal" />
     <exclude domain="database" path="salah_tracker.db-journal" />
+    <!-- The sound state saved during prayer only makes sense on this phone, right now. -->
+    <exclude domain="sharedpref" path="prayer_silence.xml" />
     <exclude domain="database" path="hadith.db" />
     <exclude domain="database" path="hadith.db-shm" />
     <exclude domain="database" path="hadith.db-wal" />

@@ -1,8 +1,10 @@
 package com.salahsync.ui.tracker
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,6 +66,8 @@ class TrackerActions(
     val logMadeUp: (Prayer) -> Unit,
     val undoMadeUp: (Prayer) -> Unit,
     val setEarlier: (Prayer, Int) -> Unit,
+    val toggleLate: (LocalDate, Prayer) -> Unit,
+    val openReport: () -> Unit,
 )
 
 /** Daily prayer ticks and the Qada they leave behind, all kept on this phone. */
@@ -83,12 +87,14 @@ fun TrackerScreen(state: TrackerState?, actions: TrackerActions) {
         if (state == null) return@Column
 
         TodayCard(state, actions)
+        ReportLink(actions.openReport)
         QadaCard(state, actions, onEditEarlier = { editingEarlier = true })
         HistoryCard(state, actions)
 
         Text(
             "A prayer that is not ticked by the end of its day is counted as Qada. If you prayed it and forgot to tick it, " +
-                "tick it in the last week above and it is taken off. Tracking began on ${state.since.format(sinceLabel)}.",
+                "tick it in the last week above and it is taken off. A tick made after the prayer's time has ended counts as " +
+                "late; press and hold a tick to switch it between on time and late. Tracking began on ${state.since.format(sinceLabel)}.",
             style = MaterialTheme.typography.bodySmall, color = c.textMuted, modifier = Modifier.padding(horizontal = 4.dp),
         )
         Row(
@@ -133,27 +139,68 @@ private fun TodayCard(state: TrackerState, actions: TrackerActions) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Prayer.fard.forEach { p ->
                 val done = state.isPrayed(state.today, p)
+                val late = state.isLate(state.today, p)
                 Column(
                     Modifier.clip(RoundedCornerShape(14.dp))
-                        .clickable(role = Role.Checkbox, onClickLabel = if (done) "Undo" else "Mark prayed") { actions.togglePrayed(state.today, p) }
+                        .tickClickable(done, late, onToggle = { actions.togglePrayed(state.today, p) }, onToggleLate = { actions.toggleLate(state.today, p) })
                         .padding(horizontal = 6.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Box(
                         Modifier.size(44.dp).clip(CircleShape)
-                            .then(if (done) Modifier.background(c.accent) else Modifier.border(1.dp, c.accentHairline, CircleShape)),
+                            .then(
+                                when {
+                                    done && !late -> Modifier.background(c.accent)
+                                    done -> Modifier.border(1.5.dp, c.accent, CircleShape)
+                                    else -> Modifier.border(1.dp, c.accentHairline, CircleShape)
+                                },
+                            ),
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (done) Icon(SalahIcons.Check, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(22.dp))
-                        else Text(p.arabicName, style = ArabicStyle.copy(fontSize = 13.sp, lineHeight = 20.sp), color = c.textMuted)
+                        when {
+                            done && !late -> Icon(SalahIcons.Check, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(22.dp))
+                            done -> Icon(SalahIcons.Clock, contentDescription = null, tint = c.accent, modifier = Modifier.size(20.dp))
+                            else -> Text(p.arabicName, style = ArabicStyle.copy(fontSize = 13.sp, lineHeight = 20.sp), color = c.textMuted)
+                        }
                     }
                     Text(
-                        p.displayName, style = MaterialTheme.typography.bodySmall, color = if (done) c.accent else c.text,
+                        if (late) "${p.displayName} · late" else p.displayName,
+                        style = MaterialTheme.typography.bodySmall, color = if (done) c.accent else c.text,
                     )
                 }
             }
         }
+    }
+}
+
+/** Tap to tick or untick; press and hold a tick to switch it between on time and late. */
+@OptIn(ExperimentalFoundationApi::class)
+private fun Modifier.tickClickable(done: Boolean, late: Boolean, onToggle: () -> Unit, onToggleLate: () -> Unit): Modifier =
+    combinedClickable(
+        role = Role.Checkbox,
+        onClickLabel = if (done) "Undo" else "Mark prayed",
+        onLongClickLabel = if (!done) null else if (late) "Mark on time" else "Mark late",
+        onLongClick = if (done) onToggleLate else null,
+        onClick = onToggle,
+    )
+
+@Composable
+private fun ReportLink(onOpen: () -> Unit) {
+    val c = Salah.colors
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        Modifier.fillMaxWidth().clip(shape).border(1.dp, c.accentHairline, shape)
+            .clickable(role = Role.Button, onClick = onOpen).padding(horizontal = 18.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Icon(SalahIcons.Star, contentDescription = null, tint = c.accent, modifier = Modifier.size(20.dp))
+        Column(Modifier.weight(1f)) {
+            Text("Weekly report", style = MaterialTheme.typography.titleMedium, color = c.text)
+            Text("On time, late and missed, Qada and streaks", style = MaterialTheme.typography.bodySmall, color = c.textMuted)
+        }
+        Icon(SalahIcons.ChevronRight, contentDescription = null, tint = c.textMuted, modifier = Modifier.size(16.dp))
     }
 }
 
@@ -242,11 +289,24 @@ private fun HistoryCard(state: TrackerState, actions: TrackerActions) {
                 Text(day.format(dayLabel), style = MaterialTheme.typography.bodyMedium, color = c.text, modifier = Modifier.weight(1f))
                 Prayer.fard.forEach { p ->
                     val done = state.isPrayed(day, p)
-                    IconButton(onClick = { actions.togglePrayed(day, p) }, modifier = Modifier.size(40.dp)) {
+                    val late = state.isLate(day, p)
+                    Box(
+                        Modifier.size(40.dp).clip(CircleShape)
+                            .tickClickable(done, late, onToggle = { actions.togglePrayed(day, p) }, onToggleLate = { actions.toggleLate(day, p) }),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         Icon(
-                            if (done) SalahIcons.Check else SalahIcons.Circle,
-                            contentDescription = "${p.displayName}, ${day.format(dayLabel)}: " + if (done) "prayed" else "missed",
-                            tint = if (done) c.accent else c.text.copy(alpha = 0.3f),
+                            when {
+                                done && late -> SalahIcons.Clock
+                                done -> SalahIcons.Check
+                                else -> SalahIcons.Circle
+                            },
+                            contentDescription = "${p.displayName}, ${day.format(dayLabel)}: " + when {
+                                done && late -> "prayed late"
+                                done -> "prayed on time"
+                                else -> "missed"
+                            },
+                            tint = if (done) c.accent.copy(alpha = if (late) 0.7f else 1f) else c.text.copy(alpha = 0.3f),
                             modifier = Modifier.size(20.dp),
                         )
                     }
