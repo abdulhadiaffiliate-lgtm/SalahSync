@@ -4,7 +4,7 @@ An Android app that reminds you of the five daily prayers, with accurate times f
 
 ## Status
 
-v1.0 Core, v1.1 Quran and v1.2 Tracker and Adhkar are in progress. See the product plan for the full roadmap (word-by-word, tafseer, hadith and more come in later releases).
+v1.0 Core, v1.1 Quran, v1.2 Tracker and Adhkar, and v1.3 Hadith are in progress. See the product plan for the full roadmap (word-by-word, tafseer and more come in later releases).
 
 ## Quran (v1.1)
 
@@ -19,6 +19,15 @@ v1.0 Core, v1.1 Quran and v1.2 Tracker and Adhkar are in progress. See the produ
 - Tick each of the five prayers as prayed. Any prayer not ticked by the end of its day counts as Qada, per prayer; log each Qada you make up, and add missed prayers from before you started tracking.
 - The record lives in a local Room database (`salah_tracker.db`) that is never uploaded and is excluded from cloud backup and device transfer (`res/xml/backup_rules.xml`, `res/xml/data_extraction_rules.xml`).
 - Morning and evening adhkar with tap-to-count; hold Ayat al-Kursi or the three Quls for the full text. Each dhikr's info icon shows its source book, hadith number, narrator and grading, linked to sunnah.com. The list is in `core/.../adhkar/Adhkar.kt`.
+
+## Hadith (v1.3)
+
+- Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud and Jami' at-Tirmidhi in Arabic, with English and Urdu translations. Browse each book by chapter (kitab), and read any hadith with its gradings (given per hadith for Abu Dawud and Tirmidhi).
+- Each book is a one-time download (14 to 24 MB, less over the network as it is compressed) from the open [hadith-api](https://github.com/fawazahmed0/hadith-api) dataset, pinned to one commit and checked against a SHA-256 per file. It is then stored in a local database (`hadith.db`) and works offline. Books can be removed again from their page.
+- Search the downloaded books by number (`13`, `2564c`, `muslim 2564`, `abu dawud 23`) or by words in the English and Urdu translations (offline full-text search).
+- An English / Urdu switch, and Arabic on or off. Where the dataset has no Urdu for a hadith, the English is shown with a note.
+- Hadith of the Day: 20 hand-picked hadith from Bukhari and Muslim, one a day, on the Hadith screen and on Home. Their text is bundled, so they need no download. The list is `DailyHadith` in `core/.../hadith/HadithData.kt`; `scripts/build-daily-hadith.py` copies their text from the pinned dataset into `app/src/main/assets/hadith/daily.json`.
+- Sahih Muslim is numbered as on sunnah.com (Fuad Abdul Baqi, with letters for each narration, e.g. 2564c); the other books use their standard numbering.
 
 ## Build
 
@@ -36,8 +45,8 @@ Every pull request builds a debug APK in GitHub Actions; download it from the ru
 
 | Module | What it holds |
 | --- | --- |
-| `core` | Pure Kotlin prayer engine: times (Adhan library), regional defaults, Hijri dates, Qibla; Quran surah and juz metadata; Qada arithmetic; the adhkar and their references |
-| `app` | Android app: Jetpack Compose UI, settings, AlAdhan online times, alarms and notifications, the Quran reader and Media3 player |
+| `core` | Pure Kotlin prayer engine: times (Adhan library), regional defaults, Hijri dates, Qibla; Quran surah and juz metadata; Qada arithmetic; the adhkar and their references; hadith books, numbering, search parsing, the pinned dataset and the daily picks |
+| `app` | Android app: Jetpack Compose UI, settings, AlAdhan online times, alarms and notifications, the Quran reader and Media3 player, hadith download and offline search |
 
 ## Adhan audio
 
@@ -45,4 +54,4 @@ No adhan recording is bundled yet. Put a licensed recording at `app/src/main/res
 
 ## Licenses
 
-Fonts are under the SIL Open Font License 1.1 (see `licenses/`). The Adhan library is MIT licensed, and AndroidX Media3 is Apache 2.0. Quran text, translations and recitation sources, with their terms, are listed in `licenses/QURAN-CONTENT.md`.
+Fonts are under the SIL Open Font License 1.1 (see `licenses/`). The Adhan library is MIT licensed, and AndroidX Media3 is Apache 2.0. Quran text, translations and recitation sources, with their terms, are listed in `licenses/QURAN-CONTENT.md`; hadith sources in `licenses/HADITH-CONTENT.md`.
