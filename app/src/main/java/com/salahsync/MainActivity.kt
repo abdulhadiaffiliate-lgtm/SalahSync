@@ -53,14 +53,21 @@ import androidx.navigation.navArgument
 import com.salahsync.adhkar.AdhkarViewModel
 import com.salahsync.core.AsrSchool
 import com.salahsync.core.guides.Madhhab
+import com.salahsync.core.hadith.HadithBook
 import com.salahsync.core.quran.AyahRef
 import com.salahsync.data.UserPrefs
+import com.salahsync.hadith.HadithItem
+import com.salahsync.hadith.HadithViewModel
 import com.salahsync.quran.QuranViewModel
 import com.salahsync.tracker.TrackerViewModel
 import com.salahsync.ui.adhkar.AdhkarScreen
 import com.salahsync.ui.components.SalahIcons
 import com.salahsync.ui.duas.DuasScreen
 import com.salahsync.ui.guides.GuidesScreen
+import com.salahsync.ui.hadith.HadithBookScreen
+import com.salahsync.ui.hadith.HadithChapterScreen
+import com.salahsync.ui.hadith.HadithDetailScreen
+import com.salahsync.ui.hadith.HadithScreen
 import com.salahsync.ui.home.HomeScreen
 import com.salahsync.ui.more.AboutScreen
 import com.salahsync.ui.more.ComingSoonScreen
@@ -143,6 +150,13 @@ private object Routes {
     const val TASBIH = "tasbih"
     const val TRACKER = "tracker"
     const val ADHKAR = "adhkar"
+    const val HADITH = "hadith"
+    const val HADITH_BOOK = "hadith/book/{book}"
+    const val HADITH_CHAPTER = "hadith/book/{book}/{chapter}"
+    const val HADITH_VIEW = "hadith/view/{book}/{ref}"
+    fun hadithBook(book: HadithBook) = "hadith/book/${book.slug}"
+    fun hadithChapter(book: HadithBook, chapter: Int) = "hadith/book/${book.slug}/$chapter"
+    fun hadithView(item: HadithItem) = "hadith/view/${item.book.slug}/${android.net.Uri.encode(item.ref)}"
     const val DUAS = "duas"
     const val GUIDES = "guides"
     const val SETTINGS = "settings"
@@ -166,6 +180,9 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
     val nav = rememberNavController()
     val quran: QuranViewModel = viewModel()
     val tracker: TrackerViewModel = viewModel()
+    val hadith: HadithViewModel = viewModel()
+    val hadithPrefs by hadith.prefs.collectAsStateWithLifecycle()
+    val dailyHadith by hadith.daily.collectAsStateWithLifecycle()
     val trackerState by tracker.state.collectAsStateWithLifecycle()
     val playback by quran.playback.collectAsStateWithLifecycle()
     val entry by nav.currentBackStackEntryAsState()
@@ -190,6 +207,8 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
             modifier = Modifier.fillMaxSize().padding(bottom = if (showMini) 68.dp else 0.dp),
         ) {
             composable(Routes.HOME) {
+                // Read through the collected state so the card appears once the daily set loads.
+                val todaysHadith = dailyHadith.takeIf { it.isNotEmpty() }?.let { hadith.dailyFor(now.toLocalDate()) }
                 HomeScreen(
                     name = prefs.name,
                     streak = prefs.streakDays,
@@ -203,6 +222,11 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onOpenQuran = { nav.switchTab(Routes.QURAN) },
                     onOpenComingSoon = { nav.navigate(Routes.soon(it)) },
                     onOpenPrayers = { nav.switchTab(Routes.PRAYERS) },
+                    dailyHadith = todaysHadith,
+                    hadithTopic = todaysHadith?.let { hadith.topicOf(it)?.topic },
+                    hadithLanguage = hadithPrefs.language,
+                    onOpenDailyHadith = { nav.navigate(Routes.hadithView(it)) },
+                    onOpenHadith = { nav.navigate(Routes.HADITH) },
                 )
             }
             composable(Routes.QURAN) { QuranScreen(quran, onRead = { nav.navigate(Routes.reader(it)) }) }
@@ -255,8 +279,38 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onGuides = { nav.navigate(Routes.GUIDES) },
                     onTracker = { nav.navigate(Routes.TRACKER) },
                     onQuran = { nav.switchTab(Routes.QURAN) },
+                    onHadith = { nav.navigate(Routes.HADITH) },
                     onSettings = { nav.navigate(Routes.SETTINGS) },
                     onAbout = { nav.navigate(Routes.ABOUT) },
+                )
+            }
+            composable(Routes.HADITH) {
+                HadithScreen(
+                    hadith,
+                    onOpenBook = { nav.navigate(Routes.hadithBook(it)) },
+                    onOpenHadith = { nav.navigate(Routes.hadithView(it)) },
+                )
+            }
+            composable(Routes.HADITH_BOOK, arguments = listOf(navArgument("book") { type = NavType.StringType })) { e ->
+                val book = HadithBook.bySlug(e.arguments?.getString("book")) ?: HadithBook.BUKHARI
+                HadithBookScreen(hadith, book, onBack = { nav.popBackStack() }, onOpenChapter = { nav.navigate(Routes.hadithChapter(book, it)) })
+            }
+            composable(
+                Routes.HADITH_CHAPTER,
+                arguments = listOf(navArgument("book") { type = NavType.StringType }, navArgument("chapter") { type = NavType.IntType }),
+            ) { e ->
+                val book = HadithBook.bySlug(e.arguments?.getString("book")) ?: HadithBook.BUKHARI
+                HadithChapterScreen(hadith, book, e.arguments?.getInt("chapter") ?: 1, onBack = { nav.popBackStack() })
+            }
+            composable(
+                Routes.HADITH_VIEW,
+                arguments = listOf(navArgument("book") { type = NavType.StringType }, navArgument("ref") { type = NavType.StringType }),
+            ) { e ->
+                val book = HadithBook.bySlug(e.arguments?.getString("book")) ?: HadithBook.BUKHARI
+                HadithDetailScreen(
+                    hadith, book, e.arguments?.getString("ref").orEmpty(),
+                    onBack = { nav.popBackStack() },
+                    onOpenBook = { nav.navigate(Routes.hadithBook(it)) },
                 )
             }
             composable(Routes.TASBIH) { TasbihScreen() }

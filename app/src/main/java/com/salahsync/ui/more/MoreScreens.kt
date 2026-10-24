@@ -42,6 +42,7 @@ fun MoreScreen(
     onGuides: () -> Unit,
     onTracker: () -> Unit,
     onQuran: () -> Unit,
+    onHadith: () -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
 ) {
@@ -54,6 +55,7 @@ fun MoreScreen(
         Text("More", style = MaterialTheme.typography.headlineLarge, color = c.text, modifier = Modifier.padding(start = 4.dp, bottom = 12.dp))
         Entry("Tasbih", "Dhikr counter: 33, 33, 34", SalahIcons.Beads, onTasbih)
         Entry("Quran", "Read, listen and keep your place", SalahIcons.Book, onQuran)
+        Entry("Hadith", "Bukhari, Muslim, Abu Dawud and Tirmidhi", SalahIcons.Notes, onHadith)
         Entry("Morning and evening adhkar", "With the hadith source for each", SalahIcons.Heart, onAdhkar)
         Entry("Duas", "Daily supplications from the Sunnah", SalahIcons.Star, onDuas)
         Entry("Wudu, Ghusl and Rakats", "Step-by-step guides, Hanafi or Shafi'i", SalahIcons.Notes, onGuides)
@@ -137,6 +139,13 @@ fun AboutScreen() {
         Source("Urdu translation", "Maulana Muhammad Junagarhi, with notes by Hafiz Salahuddin Yusuf. From QuranEnc.com, version 1.1.3, reproduced verbatim.")
         Source("Recitations", "Streamed per ayah from EveryAyah.com. Mishary Rashid Alafasy's recitation of Al-Fatihah and the last 32 surahs is included for offline listening.")
         Source("Surah and juz data", "Tanzil Project quran-data metadata.")
+        Source(
+            "Hadith",
+            "Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud and Jami' at-Tirmidhi in Arabic, English and Urdu, from the hadith-api dataset by " +
+                "Fawaz Ahmed (github.com/fawazahmed0/hadith-api), released under the Unlicense. Reproduced unchanged from one fixed version, " +
+                "each file checked against its fingerprint. English: Muhsin Khan (Bukhari), Abdul Hamid Siddiqui (Muslim). Gradings for Abu Dawud " +
+                "and Tirmidhi are as the dataset gives them. Muslim is numbered as on sunnah.com.",
+        )
         Source("Adhkar", "Morning and evening adhkar from Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud and Jami' at-Tirmidhi, with gradings as given on sunnah.com. Each dhikr's ⓘ shows its source.")
         Source("Duas", "Daily supplications quoted in the wording of Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud, Jami' at-Tirmidhi and Sunan Ibn Majah, with gradings as given on sunnah.com.")
         Source("Wudu, Ghusl and Rakats", "Steps from the hadith of 'Uthman, 'Abdullah ibn Zayd, 'A'ishah and Maymunah in Sahih al-Bukhari. Rulings and rak'ah counts from Nur al-Idah (Hanafi) and Minhaj at-Talibin (Shafi'i).")
