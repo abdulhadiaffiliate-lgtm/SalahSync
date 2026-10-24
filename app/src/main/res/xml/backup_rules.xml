@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and lower. The prayer tracker and Qada record never leave the phone.
+     Downloaded hadith books are left out too, since they can be downloaded again. -->
+<full-backup-content>
+    <exclude domain="database" path="salah_tracker.db" />
+    <exclude domain="database" path="salah_tracker.db-shm" />
+    <exclude domain="database" path="salah_tracker.db-wal" />
+    <exclude domain="database" path="salah_tracker.db-journal" />
+    <!-- The sound state saved during prayer only makes sense on this phone, right now. -->
+    <exclude domain="sharedpref" path="prayer_silence.xml" />
+    <exclude domain="database" path="hadith.db" />
+    <exclude domain="database" path="hadith.db-shm" />
+    <exclude domain="database" path="hadith.db-wal" />
+    <exclude domain="database" path="hadith.db-journal" />
+</full-backup-content>
