@@ -3,6 +3,7 @@ package com.salahsync.quran
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -23,6 +24,8 @@ data class QuranPrefs(
     val mode: TranslationMode = TranslationMode.ENGLISH,
     val reciterId: String = Reciters.default.id,
     val arabicSize: Int = DEFAULT_ARABIC_SIZE,
+    val wordByWord: Boolean = false,
+    val tafseer: Tafseer = Tafseer.ENGLISH,
 ) {
     fun isBookmarked(ref: AyahRef): Boolean = bookmarks.any { it.ref == ref }
 
@@ -40,6 +43,8 @@ class QuranStore(private val context: Context) {
         val mode = stringPreferencesKey("translation_mode")
         val reciter = stringPreferencesKey("reciter")
         val arabicSize = intPreferencesKey("arabic_size")
+        val wordByWord = booleanPreferencesKey("word_by_word")
+        val tafseer = stringPreferencesKey("tafseer")
     }
 
     val prefs: Flow<QuranPrefs> = context.quranStore.data.map { p ->
@@ -49,6 +54,8 @@ class QuranStore(private val context: Context) {
             mode = p[K.mode]?.let { runCatching { TranslationMode.valueOf(it) }.getOrNull() } ?: TranslationMode.ENGLISH,
             reciterId = p[K.reciter]?.takeIf { Reciters.byId(it) != null } ?: Reciters.default.id,
             arabicSize = (p[K.arabicSize] ?: QuranPrefs.DEFAULT_ARABIC_SIZE).coerceIn(QuranPrefs.arabicSizes),
+            wordByWord = p[K.wordByWord] ?: false,
+            tafseer = p[K.tafseer]?.let { runCatching { Tafseer.valueOf(it) }.getOrNull() } ?: Tafseer.ENGLISH,
         )
     }
 
@@ -68,4 +75,6 @@ class QuranStore(private val context: Context) {
     suspend fun setMode(mode: TranslationMode) = context.quranStore.edit { it[K.mode] = mode.name }
     suspend fun setReciter(id: String) = context.quranStore.edit { it[K.reciter] = id }
     suspend fun setArabicSize(sp: Int) = context.quranStore.edit { it[K.arabicSize] = sp.coerceIn(QuranPrefs.arabicSizes) }
+    suspend fun setWordByWord(on: Boolean) = context.quranStore.edit { it[K.wordByWord] = on }
+    suspend fun setTafseer(t: Tafseer) = context.quranStore.edit { it[K.tafseer] = t.name }
 }

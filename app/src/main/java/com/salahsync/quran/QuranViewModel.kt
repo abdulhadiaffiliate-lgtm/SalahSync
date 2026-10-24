@@ -34,10 +34,11 @@ class QuranViewModel(app: Application) : AndroidViewModel(app) {
 
     val reciter: Reciter get() = Reciters.orDefault(prefs.value.reciterId)
 
-    suspend fun surah(number: Int, mode: TranslationMode): List<Verse> = repo.surah(number, mode)
+    suspend fun surah(number: Int, mode: TranslationMode, wordByWord: Boolean = false): List<Verse> = repo.surah(number, mode, wordByWord)
     suspend fun verse(ref: AyahRef, mode: TranslationMode): Verse = repo.verse(ref, mode)
     suspend fun basmala(): String = repo.basmala()
     suspend fun notes(t: Translation, ref: AyahRef): String? = repo.notes(t, ref)
+    suspend fun tafseer(t: Tafseer, ref: AyahRef): String = repo.tafseer(t, ref)
 
     private fun io(block: suspend () -> Unit) {
         viewModelScope.launch { block() }
@@ -47,6 +48,8 @@ class QuranViewModel(app: Application) : AndroidViewModel(app) {
     fun setLastRead(ref: AyahRef) = io { store.setLastRead(ref) }
     fun setMode(mode: TranslationMode) = io { store.setMode(mode) }
     fun setArabicSize(sp: Int) = io { store.setArabicSize(sp) }
+    fun setWordByWord(on: Boolean) = io { store.setWordByWord(on) }
+    fun setTafseer(t: Tafseer) = io { store.setTafseer(t) }
 
     fun setReciter(r: Reciter) {
         io { store.setReciter(r.id) }

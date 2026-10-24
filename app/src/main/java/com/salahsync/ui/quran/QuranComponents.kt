@@ -26,6 +26,8 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -187,6 +189,7 @@ fun DisplayDialog(
     prefs: QuranPrefs,
     onMode: (TranslationMode) -> Unit,
     onSize: (Int) -> Unit,
+    onWordByWord: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val c = Salah.colors
@@ -195,7 +198,7 @@ fun DisplayDialog(
         containerColor = c.surface,
         title = { Text("Reading", style = MaterialTheme.typography.titleLarge, color = c.text) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Translation", style = MaterialTheme.typography.labelLarge, color = c.accent)
                 TranslationMode.entries.forEach { m ->
                     Row(
@@ -210,6 +213,24 @@ fun DisplayDialog(
                         Spacer(Modifier.width(12.dp))
                         Text(m.label, style = MaterialTheme.typography.bodyLarge, color = c.text)
                     }
+                }
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                        .clickable(role = Role.Switch) { onWordByWord(!prefs.wordByWord) },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Word by word", style = MaterialTheme.typography.bodyLarge, color = c.text)
+                        Text("English meaning under each Arabic word", style = MaterialTheme.typography.bodySmall, color = c.textMuted)
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Switch(
+                        checked = prefs.wordByWord, onCheckedChange = null,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = c.onAccent, checkedTrackColor = c.accent,
+                            uncheckedThumbColor = c.textMuted, uncheckedTrackColor = c.surfaceDeep, uncheckedBorderColor = c.accentHairline,
+                        ),
+                    )
                 }
                 Spacer(Modifier.height(12.dp))
                 Text("Arabic size", style = MaterialTheme.typography.labelLarge, color = c.accent)

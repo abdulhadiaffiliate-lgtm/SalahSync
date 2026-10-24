@@ -8,6 +8,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,16 +19,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,17 +49,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.salahsync.core.quran.AyahRef
 import com.salahsync.core.quran.Quran
 import com.salahsync.core.quran.QuranText
+import com.salahsync.core.quran.QuranWord
 import com.salahsync.quran.QuranViewModel
+import com.salahsync.quran.Tafseer
 import com.salahsync.quran.Translation
 import com.salahsync.quran.Verse
+import com.salahsync.quran.WORD_BY_WORD_CREDIT
 import com.salahsync.quran.audio.Offline
 import com.salahsync.ui.components.EyebrowText
 import com.salahsync.ui.components.GeometricPattern
@@ -82,11 +95,14 @@ fun ReaderScreen(
     val playback by vm.playback.collectAsStateWithLifecycle()
     val downloads by vm.downloads.collectAsStateWithLifecycle()
     val downloaded by vm.downloaded.collectAsStateWithLifecycle()
-    val verses by produceState<List<Verse>?>(null, surahNumber, prefs.mode) { value = vm.surah(surahNumber, prefs.mode) }
+    val verses by produceState<List<Verse>?>(null, surahNumber, prefs.mode, prefs.wordByWord) {
+        value = vm.surah(surahNumber, prefs.mode, prefs.wordByWord)
+    }
     val basmala by produceState("") { value = vm.basmala() }
     val list = rememberLazyListState()
     var showDisplay by remember { mutableStateOf(false) }
     var sharing by remember { mutableStateOf<Verse?>(null) }
+    var explaining by remember { mutableStateOf<AyahRef?>(null) }
     var positioned by rememberSaveable(surahNumber) { mutableStateOf(false) }
 
     val playingHere = playback.entry?.ref?.surah == surahNumber
@@ -155,11 +171,18 @@ fun ReaderScreen(
                         onPlay = { if (v.ref.ayah == playingAyah) vm.togglePlay() else vm.playAyah(v.ref) },
                         onBookmark = { vm.toggleBookmark(v.ref) },
                         onShare = { sharing = v },
+                        onTafseer = { explaining = v.ref },
                     )
                 }
                 item(key = "footer") {
                     Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         GoldDivider(Modifier.padding(vertical = 16.dp))
+                        if (prefs.wordByWord) {
+                            Text(
+                                WORD_BY_WORD_CREDIT, style = MaterialTheme.typography.bodySmall, color = c.textMuted,
+                                textAlign = TextAlign.Center, modifier = Modifier.padding(bottom = 16.dp),
+                            )
+                        }
                         if (surahNumber < Quran.surahs.size) {
                             val next = Quran.surah(surahNumber + 1)
                             Pill("Next: ${next.name}", SalahIcons.ChevronRight) { onOpenSurah(AyahRef(next.number, 1)) }
@@ -189,7 +212,8 @@ fun ReaderScreen(
         }
     }
 
-    if (showDisplay) DisplayDialog(prefs, vm::setMode, vm::setArabicSize) { showDisplay = false }
+    if (showDisplay) DisplayDialog(prefs, vm::setMode, vm::setArabicSize, vm::setWordByWord) { showDisplay = false }
+    explaining?.let { ref -> TafseerDialog(vm, ref, prefs.tafseer, vm::setTafseer) { explaining = null } }
     sharing?.let { v -> ShareVerseDialog(v, onDismiss = { sharing = null }) }
 }
 
@@ -250,6 +274,7 @@ private fun AyahItem(
     onPlay: () -> Unit,
     onBookmark: () -> Unit,
     onShare: () -> Unit,
+    onTafseer: () -> Unit,
 ) {
     val c = Salah.colors
     val bg by animateColorAsState(if (recited) c.accent.copy(alpha = 0.09f) else Color.Transparent, tween(350), label = "recited")
@@ -269,17 +294,23 @@ private fun AyahItem(
                 EyebrowText("Sajdah", color = c.accent, modifier = Modifier.padding(start = 10.dp))
             }
             Spacer(Modifier.weight(1f))
+            ActionIcon(SalahIcons.Book, "Tafseer of ayah ${verse.ref}", false, onTafseer)
             if (hasNotes) ActionIcon(SalahIcons.Notes, if (showNotes) "Hide notes" else "Show notes", showNotes) { showNotes = !showNotes }
             ActionIcon(SalahIcons.Share, "Share ayah ${verse.ref}", false, onShare)
             ActionIcon(if (bookmarked) SalahIcons.BookmarkFilled else SalahIcons.Bookmark, if (bookmarked) "Remove bookmark" else "Bookmark", bookmarked, onBookmark)
             ActionIcon(if (reciting) SalahIcons.Pause else SalahIcons.PlayLine, "Play from ayah ${verse.ref.ayah}", recited, onPlay)
         }
-        Text(
-            verse.arabic + " " + QuranText.ayahEnd(verse.ref.ayah),
-            style = quranStyle(arabicSize),
-            color = c.text,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        val words = verse.words
+        if (words != null) {
+            WordByWordText(words, verse.ref.ayah, arabicSize)
+        } else {
+            Text(
+                verse.arabic + " " + QuranText.ayahEnd(verse.ref.ayah),
+                style = quranStyle(arabicSize),
+                color = c.text,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         verse.translations.forEach { (t, text) ->
             if (t.rtl) {
                 Text(translationText(text, c.accent), style = UrduStyle, color = c.textMuted, modifier = Modifier.fillMaxWidth())
@@ -317,4 +348,67 @@ private fun ActionIcon(icon: ImageVector, description: String, active: Boolean, 
     ) {
         Icon(icon, contentDescription = description, tint = if (active) c.accent else c.textMuted, modifier = Modifier.size(18.dp))
     }
+}
+
+/** The ayah as a right-to-left flow of words, each with its English gloss underneath. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun WordByWordText(words: List<QuranWord>, ayah: Int, arabicSize: Int) {
+    val c = Salah.colors
+    val arabic = quranStyle(arabicSize).copy(lineHeight = (arabicSize * 1.6f).sp)
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        FlowRow(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            words.forEach { w ->
+                Column(Modifier.widthIn(max = 160.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(w.arabic, style = arabic, color = c.text)
+                    Text(w.gloss, style = MaterialTheme.typography.bodySmall, color = c.textMuted, textAlign = TextAlign.Center)
+                }
+            }
+            Text(QuranText.ayahEnd(ayah), style = arabic, color = c.accent)
+        }
+    }
+}
+
+/** The tafseer of one ayah, in English or Arabic, with its source. */
+@Composable
+private fun TafseerDialog(vm: QuranViewModel, ref: AyahRef, selected: Tafseer, onSelect: (Tafseer) -> Unit, onDismiss: () -> Unit) {
+    val c = Salah.colors
+    val text by produceState<String?>(null, selected, ref) { value = vm.tafseer(selected, ref) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = c.surface,
+        title = {
+            Column {
+                EyebrowText("Tafseer · ${Quran.surah(ref.surah).name} ${ref}")
+                Text(selected.title, style = if (selected.rtl) ArabicStyle.copy(fontSize = 22.sp, lineHeight = 40.sp) else MaterialTheme.typography.titleLarge, color = c.text)
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Segmented(Tafseer.entries, selected, { it.label }, onSelect = onSelect)
+                Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                    val body = text
+                    when {
+                        body == null -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = c.accent)
+                        }
+                        selected.rtl -> Text(
+                            body, style = ArabicStyle.copy(fontSize = 19.sp, lineHeight = 38.sp), color = c.text,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        else -> Text(body, style = MaterialTheme.typography.bodyLarge, color = c.text)
+                    }
+                    Text(
+                        selected.credit, style = MaterialTheme.typography.bodySmall, color = c.textMuted,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close", color = c.accent) } },
+    )
 }

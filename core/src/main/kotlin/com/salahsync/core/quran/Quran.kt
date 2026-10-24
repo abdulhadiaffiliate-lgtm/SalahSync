@@ -130,3 +130,40 @@ object QuranText {
         return sb.toString()
     }
 }
+
+/** An Arabic word of an ayah with its English gloss. */
+data class QuranWord(val arabic: String, val gloss: String)
+
+/**
+ * Pairs the words of the bundled Tanzil text with the Quranic Arabic Corpus glosses.
+ * The corpus counts words as the Tanzil text split at spaces, but in four ayat it
+ * treats two of our words as one: there the two are shown together under one gloss.
+ */
+object WordByWord {
+    /** For each such ayah, the index (from 0) of the first of the two words the corpus joins. */
+    val joined: Map<AyahRef, Int> = mapOf(
+        AyahRef(2, 181) to 2, // baʿda mā
+        AyahRef(8, 6) to 3, // baʿda mā
+        AyahRef(13, 37) to 7, // baʿda mā
+        AyahRef(37, 130) to 2, // il yāsīn
+    )
+
+    /** Splits one line's text of the word-by-word file into its glosses. */
+    fun glosses(text: String): List<String> = text.split('\t')
+
+    /**
+     * The words of [arabic] (as the reader shows it, without a leading basmala) with
+     * their [glosses], or null if they do not line up, so the ayah is shown as plain text.
+     */
+    fun pair(ref: AyahRef, arabic: String, glosses: List<String>): List<QuranWord>? {
+        val words = arabic.split(' ').filter { it.isNotEmpty() }.toMutableList()
+        joined[ref]?.let { i ->
+            if (i + 1 < words.size) {
+                words[i] = words[i] + " " + words[i + 1]
+                words.removeAt(i + 1)
+            }
+        }
+        if (words.size != glosses.size) return null
+        return words.zip(glosses) { a, g -> QuranWord(a, g) }
+    }
+}
