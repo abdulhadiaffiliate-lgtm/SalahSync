@@ -51,6 +51,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.salahsync.adhkar.AdhkarViewModel
+import com.salahsync.core.AsrSchool
+import com.salahsync.core.guides.Madhhab
 import com.salahsync.core.hadith.HadithBook
 import com.salahsync.core.quran.AyahRef
 import com.salahsync.data.UserPrefs
@@ -60,6 +62,8 @@ import com.salahsync.quran.QuranViewModel
 import com.salahsync.tracker.TrackerViewModel
 import com.salahsync.ui.adhkar.AdhkarScreen
 import com.salahsync.ui.components.SalahIcons
+import com.salahsync.ui.duas.DuasScreen
+import com.salahsync.ui.guides.GuidesScreen
 import com.salahsync.ui.hadith.HadithBookScreen
 import com.salahsync.ui.hadith.HadithChapterScreen
 import com.salahsync.ui.hadith.HadithDetailScreen
@@ -153,6 +157,8 @@ private object Routes {
     fun hadithBook(book: HadithBook) = "hadith/book/${book.slug}"
     fun hadithChapter(book: HadithBook, chapter: Int) = "hadith/book/${book.slug}/$chapter"
     fun hadithView(item: HadithItem) = "hadith/view/${item.book.slug}/${android.net.Uri.encode(item.ref)}"
+    const val DUAS = "duas"
+    const val GUIDES = "guides"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
     const val SOON = "soon/{feature}"
@@ -269,6 +275,8 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                 MoreScreen(
                     onTasbih = { nav.navigate(Routes.TASBIH) },
                     onAdhkar = { nav.navigate(Routes.ADHKAR) },
+                    onDuas = { nav.navigate(Routes.DUAS) },
+                    onGuides = { nav.navigate(Routes.GUIDES) },
                     onTracker = { nav.navigate(Routes.TRACKER) },
                     onQuran = { nav.switchTab(Routes.QURAN) },
                     onHadith = { nav.navigate(Routes.HADITH) },
@@ -320,6 +328,10 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
             composable(Routes.ADHKAR) {
                 val adhkar: AdhkarViewModel = viewModel()
                 AdhkarScreen(adhkar)
+            }
+            composable(Routes.DUAS) { DuasScreen() }
+            composable(Routes.GUIDES) {
+                GuidesScreen(if (prefs.asrSchool == AsrSchool.HANAFI) Madhhab.HANAFI else Madhhab.SHAFII)
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen(
