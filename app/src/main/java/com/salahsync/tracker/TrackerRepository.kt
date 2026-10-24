@@ -8,8 +8,13 @@ import com.salahsync.core.tracker.QadaEntry
 import com.salahsync.core.tracker.QadaKind
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
+
+data class Marks(val prayed: Set<Pair<LocalDate, Prayer>>, val late: Set<Pair<LocalDate, Prayer>>)
+
+data class Snapshot(val since: LocalDate, val marks: Marks, val qada: List<QadaEntry>)
 
 /** Prayer history, Qada and adhkar progress, kept in a local database that is never synced. */
 class TrackerRepository(context: Context) {
@@ -21,8 +26,19 @@ class TrackerRepository(context: Context) {
     /** The first day whose unmarked prayers count as Qada. */
     val trackingSince: Flow<LocalDate> = dao.metaFlow(KEY_SINCE).filterNotNull().map { LocalDate.ofEpochDay(it.toLong()) }
 
-    val prayed: Flow<Set<Pair<LocalDate, Prayer>>> = dao.prayed().map { rows ->
-        rows.mapNotNull { r -> prayerOf(r.prayer)?.let { LocalDate.ofEpochDay(r.day) to it } }.toSet()
+    /** Every tick, with whether it was late. */
+    val marks: Flow<Marks> = dao.prayed().map { rows ->
+        val all = rows.mapNotNull { r -> prayerOf(r.prayer)?.let { Triple(LocalDate.ofEpochDay(r.day), it, r.late) } }
+        Marks(
+            prayed = all.map { (d, p, _) -> d to p }.toSet(),
+            late = all.filter { it.third }.map { (d, p, _) -> d to p }.toSet(),
+        )
+    }
+
+    /** The tracker as it stands now, for work done outside the app's screens. */
+    suspend fun snapshot(): Snapshot? {
+        val since = dao.meta(KEY_SINCE)?.toLongOrNull()?.let(LocalDate::ofEpochDay) ?: return null
+        return Snapshot(since, marks.first(), qadaEntries.first())
     }
 
     val qadaEntries: Flow<List<QadaEntry>> = dao.qada().map { rows ->
@@ -47,10 +63,17 @@ class TrackerRepository(context: Context) {
         if (rows.isNotEmpty()) dao.insertPrayedAll(rows)
     }
 
-    suspend fun togglePrayed(date: LocalDate, prayer: Prayer) = db.withTransaction {
+    /** Ticks or unticks [prayer]. A new tick is stored as [lateIfMarked]. */
+    suspend fun togglePrayed(date: LocalDate, prayer: Prayer, lateIfMarked: Boolean) = db.withTransaction {
         val day = date.toEpochDay()
         if (dao.isPrayed(day, prayer.name) > 0) dao.deletePrayed(day, prayer.name)
-        else dao.insertPrayed(PrayedRow(day, prayer.name))
+        else dao.insertPrayed(PrayedRow(day, prayer.name, late = lateIfMarked, markedAt = System.currentTimeMillis()))
+    }
+
+    /** Switches a ticked prayer between on time and late. Does nothing if it is not ticked. */
+    suspend fun toggleLate(date: LocalDate, prayer: Prayer) = db.withTransaction {
+        val day = date.toEpochDay()
+        dao.prayedRow(day, prayer.name)?.let { dao.setLate(day, prayer.name, !it.late) }
     }
 
     suspend fun logMadeUp(prayer: Prayer, today: LocalDate) = addEntry(prayer, QadaKind.MADE_UP, 1, today)

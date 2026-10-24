@@ -47,7 +47,7 @@ object VerseArt {
     private const val WIDTH = 1080
 
     /** Loads a bundled font; variable fonts are pinned to [weight] where Android allows it. */
-    private fun font(context: Context, id: Int, weight: Int = 500, italic: Boolean = false): Typeface {
+    internal fun font(context: Context, id: Int, weight: Int = 500, italic: Boolean = false): Typeface {
         val tf = ResourcesCompat.getFont(context, id) ?: Typeface.DEFAULT
         return if (Build.VERSION.SDK_INT >= 28) Typeface.create(tf, weight, italic) else tf
     }
@@ -142,7 +142,7 @@ object VerseArt {
         return bitmap
     }
 
-    private fun background(canvas: Canvas, style: CardStyle, w: Float, h: Float) {
+    internal fun background(canvas: Canvas, style: CardStyle, w: Float, h: Float) {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         paint.shader = LinearGradient(0f, 0f, 0f, h, style.top, style.bottom, Shader.TileMode.CLAMP)
         canvas.drawRect(0f, 0f, w, h, paint)
@@ -172,7 +172,7 @@ object VerseArt {
     }
 
     /** The eight-pointed star used across the app. */
-    private fun star(canvas: Canvas, cx: Float, cy: Float, outer: Float, paint: Paint) {
+    internal fun star(canvas: Canvas, cx: Float, cy: Float, outer: Float, paint: Paint) {
         val inner = outer * 0.2666f
         val p = Path().apply {
             moveTo(cx, cy - outer)
@@ -184,7 +184,7 @@ object VerseArt {
         canvas.drawPath(p, paint)
     }
 
-    private fun hairline(canvas: Canvas, style: CardStyle, y: Float, w: Float) {
+    internal fun hairline(canvas: Canvas, style: CardStyle, y: Float, w: Float) {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             shader = LinearGradient(w * 0.3f, y, w * 0.7f, y, intArrayOf(0, style.accent, 0), null, Shader.TileMode.CLAMP)
             strokeWidth = 2f
@@ -193,9 +193,9 @@ object VerseArt {
     }
 
     /** Saves [bitmap] to the share cache and opens the system share sheet. */
-    fun share(context: Context, bitmap: Bitmap, text: String) {
+    fun share(context: Context, bitmap: Bitmap, text: String, fileName: String = "verse.png") {
         val dir = File(context.cacheDir, "shared").apply { mkdirs() }
-        val file = File(dir, "verse.png")
+        val file = File(dir, fileName)
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
         val send = Intent(Intent.ACTION_SEND)

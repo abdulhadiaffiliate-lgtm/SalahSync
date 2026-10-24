@@ -24,6 +24,11 @@ object Notifications {
     const val CHANNEL_PRAYER = "prayer_v1"
     const val CHANNEL_SILENT = "prayer_silent_v1"
     const val CHANNEL_REMINDERS = "reminders_v1"
+    const val CHANNEL_QUIET = "prayer_quiet_v1"
+    const val CHANNEL_REPORT = "weekly_report_v1"
+
+    const val ID_QUIET = 40
+    const val ID_REPORT = 41
 
     /**
      * The adhan recording. Drop a licensed `adhan.mp3` into res/raw to use it;
@@ -65,7 +70,16 @@ object Notifications {
         val reminders = NotificationChannel(
             CHANNEL_REMINDERS, context.getString(R.string.channel_reminders), NotificationManager.IMPORTANCE_DEFAULT,
         ).apply { description = context.getString(R.string.channel_reminders_desc) }
-        nm.createNotificationChannels(listOf(adhan, prayer, silent, reminders))
+        val quiet = NotificationChannel(
+            CHANNEL_QUIET, context.getString(R.string.channel_quiet), NotificationManager.IMPORTANCE_LOW,
+        ).apply {
+            description = context.getString(R.string.channel_quiet_desc)
+            setShowBadge(false)
+        }
+        val report = NotificationChannel(
+            CHANNEL_REPORT, context.getString(R.string.channel_report), NotificationManager.IMPORTANCE_DEFAULT,
+        ).apply { description = context.getString(R.string.channel_report_desc) }
+        nm.createNotificationChannels(listOf(adhan, prayer, silent, reminders, quiet, report))
     }
 
     fun channelFor(style: AlertStyle): String? = when (style) {
@@ -79,13 +93,61 @@ object Notifications {
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED || android.os.Build.VERSION.SDK_INT < 33
 
-    fun show(context: Context, id: Int, channel: String, title: String, text: String) {
-        if (!canPost(context)) return
-        val open = PendingIntent.getActivity(
-            context, 0,
-            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+    private fun openApp(context: Context, requestCode: Int, extras: (Intent) -> Unit = {}): PendingIntent =
+        PendingIntent.getActivity(
+            context, requestCode,
+            Intent(context, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                .also(extras),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+
+    private fun post(context: Context, id: Int, n: android.app.Notification) {
+        if (!canPost(context)) return
+        try {
+            NotificationManagerCompat.from(context).notify(id, n)
+        } catch (_: SecurityException) {
+            // Permission revoked between the check and the post.
+        }
+    }
+
+    /** The ongoing note shown while the phone is quiet for prayer, with a way to undo it. */
+    fun showQuiet(context: Context, title: String, text: String, restore: PendingIntent) {
+        val n = NotificationCompat.Builder(context, CHANNEL_QUIET)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setColor(0xFFD9BC84.toInt())
+            .setContentTitle(title)
+            .setContentText(text)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setSilent(true)
+            .setContentIntent(openApp(context, 2))
+            .addAction(0, context.getString(R.string.quiet_restore_now), restore)
+            .build()
+        post(context, ID_QUIET, n)
+    }
+
+    fun cancel(context: Context, id: Int) = NotificationManagerCompat.from(context).cancel(id)
+
+    /** The Friday report notification; tapping it opens the report screen. */
+    fun showReport(context: Context, title: String, text: String) {
+        val n = NotificationCompat.Builder(context, CHANNEL_REPORT)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setColor(0xFFD9BC84.toInt())
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
+            .setAutoCancel(true)
+            .setContentIntent(openApp(context, 3) { it.putExtra(MainActivity.EXTRA_OPEN_REPORT, true) })
+            .build()
+        post(context, ID_REPORT, n)
+    }
+
+    fun show(context: Context, id: Int, channel: String, title: String, text: String) {
+        if (!canPost(context)) return
+        val open = openApp(context, 0)
         val n = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_notification)
             .setColor(0xFFD9BC84.toInt())
@@ -96,10 +158,6 @@ object Notifications {
             .setAutoCancel(true)
             .setContentIntent(open)
             .build()
-        try {
-            NotificationManagerCompat.from(context).notify(id, n)
-        } catch (_: SecurityException) {
-            // Permission revoked between the check and the post.
-        }
+        post(context, id, n)
     }
 }

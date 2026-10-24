@@ -1,6 +1,7 @@
 package com.salahsync.tracker
 
 import android.content.Context
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -10,11 +11,21 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
-/** A fard prayer marked as prayed on [day] (epoch day). */
+/**
+ * A fard prayer marked as prayed on [day] (epoch day). [late] is set when it was prayed
+ * after its time had ended; [markedAt] is when it was ticked, or 0 if not known.
+ */
 @Entity(tableName = "prayed", primaryKeys = ["day", "prayer"])
-data class PrayedRow(val day: Long, val prayer: String)
+data class PrayedRow(
+    val day: Long,
+    val prayer: String,
+    @ColumnInfo(defaultValue = "0") val late: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val markedAt: Long = 0,
+)
 
 /** One line in the Qada ledger: earlier missed prayers added by hand, or a prayer made up. */
 @Entity(tableName = "qada_entry")
@@ -47,6 +58,12 @@ interface TrackerDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertPrayedAll(rows: List<PrayedRow>)
+
+    @Query("SELECT * FROM prayed WHERE day = :day AND prayer = :prayer")
+    suspend fun prayedRow(day: Long, prayer: String): PrayedRow?
+
+    @Query("UPDATE prayed SET late = :late WHERE day = :day AND prayer = :prayer")
+    suspend fun setLate(day: Long, prayer: String, late: Boolean)
 
     @Query("DELETE FROM prayed WHERE day = :day AND prayer = :prayer")
     suspend fun deletePrayed(day: Long, prayer: String)
@@ -88,7 +105,7 @@ interface TrackerDao {
  */
 @Database(
     entities = [PrayedRow::class, QadaRow::class, AdhkarProgressRow::class, MetaRow::class],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 abstract class TrackerDatabase : RoomDatabase() {
@@ -97,7 +114,15 @@ abstract class TrackerDatabase : RoomDatabase() {
     companion object {
         const val FILE = "salah_tracker.db"
 
+        /** Version 2 records whether each prayer was on time. Older ticks count as on time. */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE prayed ADD COLUMN late INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE prayed ADD COLUMN markedAt INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun open(context: Context): TrackerDatabase =
-            Room.databaseBuilder(context, TrackerDatabase::class.java, FILE).build()
+            Room.databaseBuilder(context, TrackerDatabase::class.java, FILE).addMigrations(MIGRATION_1_2).build()
     }
 }
