@@ -59,7 +59,7 @@ v1.0 Core, v1.1 Quran, v1.2 Tracker and Adhkar, and v1.3 Silent mode, Weekly rep
 
 ## 99 Names of Allah
 
-- All 99 names in Arabic, with a transliteration and English meaning, searchable by name, meaning, number or Arabic. A name of the day sits at the top of the screen and on its Explore tile on Home; open it from Explore or from More.
+- All 99 names as hexagon tiles in a scrolling honeycomb, each with its number, Arabic and transliteration; tap a tile to read its meaning, then step to the previous or next name. A name of the day sits at the top of the screen and on its Explore tile on Home; open it from Explore or from More.
 - The Arabic and order follow the listing in Jami' at-Tirmidhi 3507, copied from the same pinned hadith dataset, with Al-Ahad added after Al-Wahid as in most lists. The screen notes that this listing is graded weak, and cites Sahih al-Bukhari 2736 for the 99 names. The list is in `core/.../names/AllahNames.kt`.
 
 ## Goals
