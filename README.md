@@ -45,6 +45,12 @@ v1.0 Core, v1.1 Quran, v1.2 Tracker and Adhkar, and v1.3 Silent mode, Weekly rep
 - Step-by-step Wudu and Ghusl, each step marked Fard or Sunnah for the chosen school, with its hadith or Quran source (`core/.../guides/Guides.kt`).
 - Rak'ahs of the five prayers and Jumu'ah, Hanafi or Shafi'i, split into sunnah before, fard, sunnah after and Witr (`core/.../guides/Rakats.kt`). The school defaults to the Asr setting and can be switched on the screen.
 
+## Islamic quiz
+
+- 49 short multiple-choice questions on faith, prayer, the Quran, the prophets, and fasting, zakah and hajj. Pick a topic or Mixed, answer five questions, and see the score at the end.
+- After each answer the right one is shown with a short explanation and its source: the ayah (tap it to open the reader) or the hadith with its grading and a sunnah.com link. Only well-established basics are asked, and every hadith was checked against the pinned hadith dataset.
+- The questions are in `core/.../quiz/Quiz.kt`, with the correct option written first; each round shuffles the options. Open it from Explore on Home or from More.
+
 ## Build
 
 Requirements: JDK 17 and the Android SDK (API 35).
