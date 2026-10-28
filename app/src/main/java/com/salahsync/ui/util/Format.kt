@@ -1,6 +1,7 @@
 package com.salahsync.ui.util
 
 import java.time.Duration
+import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -8,6 +9,8 @@ import java.util.Locale
 private val timeFormat = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
 
 fun formatTime(t: ZonedDateTime): String = t.format(timeFormat)
+
+fun formatTime(t: LocalTime): String = t.format(timeFormat)
 
 /** "1:12" for hours and minutes, or "12:05" for minutes and seconds under an hour. */
 fun formatCountdown(d: Duration): String {

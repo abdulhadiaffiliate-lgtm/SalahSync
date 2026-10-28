@@ -83,6 +83,10 @@ object QuranText {
     /** QuranEnc translations start with "(n) "; the reader already shows the ayah number. */
     fun displayTranslation(text: String): String = text.replace(leadingNumber, "")
 
+    /** A translation with its verse number and footnote markers taken out, for a notification. */
+    fun plainTranslation(text: String): String =
+        displayTranslation(text).replace(footnoteRef, "").replace(Regex("""\s{2,}"""), " ").trim()
+
     /** The footnote numbers referenced in a translation, such as [1] and [2]. */
     fun footnoteRefs(text: String): List<String> = footnoteRef.findAll(text).map { it.groupValues[1] }.toList()
 

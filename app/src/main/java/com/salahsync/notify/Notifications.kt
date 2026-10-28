@@ -26,9 +26,11 @@ object Notifications {
     const val CHANNEL_REMINDERS = "reminders_v1"
     const val CHANNEL_QUIET = "prayer_quiet_v1"
     const val CHANNEL_REPORT = "weekly_report_v1"
+    const val CHANNEL_DAILY = "daily_note_v1"
 
     const val ID_QUIET = 40
     const val ID_REPORT = 41
+    const val ID_DAILY = 42
 
     /**
      * The adhan recording. Drop a licensed `adhan.mp3` into res/raw to use it;
@@ -79,7 +81,15 @@ object Notifications {
         val report = NotificationChannel(
             CHANNEL_REPORT, context.getString(R.string.channel_report), NotificationManager.IMPORTANCE_DEFAULT,
         ).apply { description = context.getString(R.string.channel_report_desc) }
-        nm.createNotificationChannels(listOf(adhan, prayer, silent, reminders, quiet, report))
+        // Gentle by design: it shows in the shade and status bar but makes no sound.
+        val daily = NotificationChannel(
+            CHANNEL_DAILY, context.getString(R.string.channel_daily), NotificationManager.IMPORTANCE_DEFAULT,
+        ).apply {
+            description = context.getString(R.string.channel_daily_desc)
+            setSound(null, null)
+            enableVibration(false)
+        }
+        nm.createNotificationChannels(listOf(adhan, prayer, silent, reminders, quiet, report, daily))
     }
 
     fun channelFor(style: AlertStyle): String? = when (style) {
@@ -143,6 +153,26 @@ object Notifications {
             .setContentIntent(openApp(context, 3) { it.putExtra(MainActivity.EXTRA_OPEN_REPORT, true) })
             .build()
         post(context, ID_REPORT, n)
+    }
+
+    /**
+     * The daily ayah or good deed. [extras] says where a tap goes; [subText] carries
+     * the source so it is always visible, even when the text is collapsed.
+     */
+    fun showDaily(context: Context, title: String, text: String, subText: String, extras: (Intent) -> Unit) {
+        val n = NotificationCompat.Builder(context, CHANNEL_DAILY)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setColor(0xFFD9BC84.toInt())
+            .setContentTitle(title)
+            .setContentText(text)
+            .setSubText(subText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
+            .setSilent(true)
+            .setAutoCancel(true)
+            .setContentIntent(openApp(context, 4, extras))
+            .build()
+        post(context, ID_DAILY, n)
     }
 
     fun show(context: Context, id: Int, channel: String, title: String, text: String) {

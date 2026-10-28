@@ -11,10 +11,12 @@ import com.salahsync.core.HijriDate
 import com.salahsync.core.Method
 import com.salahsync.core.Prayer
 import com.salahsync.core.SilenceMode
+import com.salahsync.core.daily.DailyNoteKind
 import com.salahsync.data.AlertStyle
 import com.salahsync.data.SavedLocation
 import com.salahsync.data.ThemeMode
 import com.salahsync.data.UserPrefs
+import com.salahsync.notify.postDailyNote
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -120,6 +122,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setSilentJumuahMinutes(m: Int) = io { settings.setSilentJumuahMinutes(m) }
     fun setSilentFor(p: Prayer, on: Boolean) = io { settings.setSilentFor(p, on) }
     fun setWeeklyReport(on: Boolean) = io { settings.setWeeklyReport(on) }
+    fun setDailyNote(on: Boolean) = io { settings.setDailyNote(on) }
+    fun setDailyNoteKind(k: DailyNoteKind) = io { settings.setDailyNoteKind(k) }
+    fun setDailyNoteMinutes(m: Int) = io { settings.setDailyNoteMinutes(m) }
+
+    /** Posts today's daily note right away, so the user can see what it looks like. */
+    fun previewDailyNote() = io { postDailyNote(salah, prefs.value?.dailyNoteKind ?: DailyNoteKind.ALTERNATE) }
 
     fun hasDndAccess(): Boolean = salah.silence.hasPolicyAccess()
 
