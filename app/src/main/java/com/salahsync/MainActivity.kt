@@ -468,6 +468,19 @@ private fun NavHostController.switchTab(route: String) {
     }
 }
 
+/**
+ * Tapping Home, or the tab you are already in, goes back to that tab's first screen.
+ * [switchTab] would restore the saved screens instead, so the tap seemed to do nothing.
+ */
+private fun NavHostController.resetTab(route: String) {
+    if (!popBackStack(route, inclusive = false)) {
+        navigate(route) {
+            popUpTo(Routes.HOME)
+            launchSingleTop = true
+        }
+    }
+}
+
 @Composable
 private fun BottomBar(nav: NavHostController, modifier: Modifier = Modifier) {
     val c = Salah.colors
@@ -486,7 +499,9 @@ private fun BottomBar(nav: NavHostController, modifier: Modifier = Modifier) {
             val tint = if (selected) c.accent else c.textMuted
             Column(
                 Modifier.weight(1f).fillMaxSize()
-                    .selectable(selected = selected, role = Role.Tab) { nav.switchTab(tab.route) },
+                    .selectable(selected = selected, role = Role.Tab) {
+                        if (selected || tab.route == Routes.HOME) nav.resetTab(tab.route) else nav.switchTab(tab.route)
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
             ) {

@@ -52,8 +52,10 @@ class PlaybackService : MediaSessionService() {
             }
         })
 
+        // Its own request code: the prayer notifications use 0 for MainActivity too, and a
+        // shared code would make Android merge the two, so one tap would open the other's screen.
         val open = PendingIntent.getActivity(
-            this, 0,
+            this, REQUEST_OPEN_PLAYER,
             Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_OPEN_PLAYER, true)
                 .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
@@ -90,5 +92,9 @@ class PlaybackService : MediaSessionService() {
         }
         session = null
         super.onDestroy()
+    }
+
+    private companion object {
+        const val REQUEST_OPEN_PLAYER = 1
     }
 }
