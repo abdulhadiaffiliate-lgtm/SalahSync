@@ -70,6 +70,7 @@ object SalahIcons {
     val RepeatOne = icon("repeat_one", "M5,11 V9 A2,2 0 0 1 7,7 H18", "M15,4 L18,7 L15,10", "M19,13 V15 A2,2 0 0 1 17,17 H6", "M9,14 L6,17 L9,20", "M11.5,10.5 L12.5,10 V14")
     val Close = icon("close", "M6,6 L18,18", "M18,6 L6,18")
     val Notes = icon("notes", "M6,4 H15 L18,7 V20 H6 Z", "M9,10 H15", "M9,13.5 H15", "M9,17 H13")
+    val Quiz = icon("quiz", circle(12f, 12f, 9f), "M9.5,9.5 A2.5,2.5 0 1 1 13,11.8 C12.3,12.2 12,12.7 12,13.5", "M12,16.6 V16.8")
     val Search = icon("search", circle(11f, 11f, 6.5f), "M16,16 L20,20")
     val Copy = icon("copy", "M9,9 H19 V19 H9 Z", "M15,9 V5 H5 V15 H9")
     val Headphones = icon("headphones", "M4,15 V12 A8,8 0 0 1 20,12 V15", "M4,14 H7 V20 H5 A1,1 0 0 1 4,19 Z", "M20,14 H17 V20 H19 A1,1 0 0 0 20,19 Z")

@@ -73,7 +73,7 @@ class QuranTest {
 
     @Test
     fun translationsHaveEveryAyah() {
-        for (name in listOf("en-saheeh.txt", "ur-junagarhi.txt", "en-mukhtasar.txt", "ar-muyassar.txt", "en-wbw.txt")) {
+        for (name in listOf("en-saheeh.txt", "ur-junagarhi.txt", "en-mukhtasar.txt", "ar-muyassar.txt", "en-wbw.txt", "wbw-phonetic.txt")) {
             val lines = File(assets, name).readLines().mapNotNull(QuranText::parseLine)
             assertEquals(Quran.AYAH_COUNT, lines.size, name)
             lines.forEachIndexed { i, (ref, text) ->
@@ -103,11 +103,14 @@ class QuranTest {
     fun everyAyahHasAGlossForEachWord() {
         val arabic = File(assets, "ar-uthmani.txt").readLines().mapNotNull(QuranText::parseLine).toMap()
         val glosses = File(assets, "en-wbw.txt").readLines().mapNotNull(QuranText::parseLine)
+        val sounds = File(assets, "wbw-phonetic.txt").readLines().mapNotNull(QuranText::parseLine).toMap()
         var words = 0
         glosses.forEach { (ref, text) ->
-            val paired = WordByWord.pair(ref, QuranText.displayArabic(ref, arabic.getValue(ref)), WordByWord.glosses(text))
-            assertTrue(paired != null, "Words and glosses differ in $ref")
-            assertTrue(paired.all { it.arabic.isNotBlank() && it.gloss.isNotBlank() }, "$ref")
+            val paired = WordByWord.pair(
+                ref, QuranText.displayArabic(ref, arabic.getValue(ref)), WordByWord.glosses(text), WordByWord.glosses(sounds.getValue(ref)),
+            )
+            assertTrue(paired != null, "Words, glosses and transliterations differ in $ref")
+            assertTrue(paired.all { it.arabic.isNotBlank() && it.gloss.isNotBlank() && it.transliteration.isNotBlank() }, "$ref")
             words += paired.size
         }
         assertEquals(77429, words)
@@ -119,6 +122,7 @@ class QuranTest {
         val paired = WordByWord.pair(ref, "سَلَٰمٌ عَلَىٰٓ إِلْ يَاسِينَ", listOf("\"Peace be", "upon", "Elijah.\""))!!
         assertEquals("إِلْ يَاسِينَ", paired[2].arabic)
         assertEquals("Elijah.\"", paired[2].gloss)
+        assertEquals("", paired[2].transliteration)
         assertNull(WordByWord.pair(AyahRef(1, 2), "a b c", listOf("x", "y")))
     }
 }

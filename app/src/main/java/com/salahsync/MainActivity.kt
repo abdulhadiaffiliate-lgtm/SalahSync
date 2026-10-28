@@ -79,6 +79,7 @@ import com.salahsync.ui.more.MoreScreen
 import com.salahsync.ui.onboarding.OnboardingScreen
 import com.salahsync.ui.prayers.PrayerTimesScreen
 import com.salahsync.ui.qibla.QiblaScreen
+import com.salahsync.ui.quiz.QuizScreen
 import com.salahsync.ui.quran.MiniPlayer
 import com.salahsync.ui.quran.PlayerScreen
 import com.salahsync.ui.quran.QuranScreen
@@ -174,6 +175,7 @@ private object Routes {
     const val FEELING = "feelings/{id}"
     fun feeling(f: Feeling) = "feelings/${f.id}"
     const val GUIDES = "guides"
+    const val QUIZ = "quiz"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
     const val SOON = "soon/{feature}"
@@ -253,6 +255,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onOpenTracker = { nav.navigate(Routes.TRACKER) },
                     onOpenDuas = { nav.navigate(Routes.DUAS) },
                     onOpenGuides = { nav.navigate(Routes.GUIDES) },
+                    onOpenQuiz = { nav.navigate(Routes.QUIZ) },
                 )
             }
             composable(Routes.QURAN) { QuranScreen(quran, onRead = { nav.navigate(Routes.reader(it)) }) }
@@ -304,6 +307,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onDuas = { nav.navigate(Routes.DUAS) },
                     onFeelings = { nav.navigate(Routes.FEELINGS) },
                     onGuides = { nav.navigate(Routes.GUIDES) },
+                    onQuiz = { nav.navigate(Routes.QUIZ) },
                     onTracker = { nav.navigate(Routes.TRACKER) },
                     onQuran = { nav.switchTab(Routes.QURAN) },
                     onHadith = { nav.switchTab(Routes.HADITH) },
@@ -375,6 +379,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onOpenHadith = { nav.navigate(Routes.hadithView(it)) },
                 )
             }
+            composable(Routes.QUIZ) { QuizScreen(onOpenAyah = { nav.navigate(Routes.reader(it)) }) }
             composable(Routes.GUIDES) {
                 GuidesScreen(if (prefs.asrSchool == AsrSchool.HANAFI) Madhhab.HANAFI else Madhhab.SHAFII)
             }

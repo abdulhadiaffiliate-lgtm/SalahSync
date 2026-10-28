@@ -131,8 +131,8 @@ object QuranText {
     }
 }
 
-/** An Arabic word of an ayah with its English gloss. */
-data class QuranWord(val arabic: String, val gloss: String)
+/** An Arabic word of an ayah with its English gloss and, where known, its transliteration. */
+data class QuranWord(val arabic: String, val gloss: String, val transliteration: String = "")
 
 /**
  * Pairs the words of the bundled Tanzil text with the Quranic Arabic Corpus glosses.
@@ -148,14 +148,15 @@ object WordByWord {
         AyahRef(37, 130) to 2, // il yāsīn
     )
 
-    /** Splits one line's text of the word-by-word file into its glosses. */
+    /** Splits one line's text of the word-by-word or transliteration file into its words. */
     fun glosses(text: String): List<String> = text.split('\t')
 
     /**
      * The words of [arabic] (as the reader shows it, without a leading basmala) with
-     * their [glosses], or null if they do not line up, so the ayah is shown as plain text.
+     * their [glosses] and [transliterations] (in the same order; leave it empty to skip),
+     * or null if they do not line up, so the ayah is shown as plain text.
      */
-    fun pair(ref: AyahRef, arabic: String, glosses: List<String>): List<QuranWord>? {
+    fun pair(ref: AyahRef, arabic: String, glosses: List<String>, transliterations: List<String> = emptyList()): List<QuranWord>? {
         val words = arabic.split(' ').filter { it.isNotEmpty() }.toMutableList()
         joined[ref]?.let { i ->
             if (i + 1 < words.size) {
@@ -164,6 +165,7 @@ object WordByWord {
             }
         }
         if (words.size != glosses.size) return null
-        return words.zip(glosses) { a, g -> QuranWord(a, g) }
+        if (transliterations.isNotEmpty() && transliterations.size != words.size) return null
+        return words.indices.map { i -> QuranWord(words[i], glosses[i], transliterations.getOrElse(i) { "" }) }
     }
 }

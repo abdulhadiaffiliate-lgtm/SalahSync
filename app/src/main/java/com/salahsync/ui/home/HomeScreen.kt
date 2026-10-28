@@ -106,6 +106,7 @@ fun HomeScreen(
     onOpenTracker: () -> Unit,
     onOpenDuas: () -> Unit,
     onOpenGuides: () -> Unit,
+    onOpenQuiz: () -> Unit,
 ) {
     val c = Salah.colors
     val next = nextPrayer(now, today, tomorrow)
@@ -162,6 +163,7 @@ fun HomeScreen(
             Text("Explore", style = MaterialTheme.typography.titleMedium, color = c.text)
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ExploreTile("Islamic quiz", "Five quick questions, with sources", SalahIcons.Quiz, onOpenQuiz)
                 ExploreTile("Prayer tracker", "Tick each prayer and see your week", SalahIcons.Check, onOpenTracker)
                 ExploreTile("Hadith", "Bukhari, Muslim, Abu Dawud and Tirmidhi", SalahIcons.Notes, onOpenHadith)
                 ExploreTile("Duas", "For the moments of your day", SalahIcons.Star, onOpenDuas)

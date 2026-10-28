@@ -37,22 +37,44 @@ enum class TranslationMode(val label: String, val translations: List<Translation
     ARABIC("Arabic only", emptyList()),
 }
 
-/** A bundled tafseer, republished verbatim with credit to its publisher (see licenses/QURAN-CONTENT.md). */
+/**
+ * The tafseer for each language, republished verbatim with credit to its publisher
+ * (see licenses/QURAN-CONTENT.md). [file] is null for Urdu, whose tafseer is
+ * Ahsan-ul-Bayan: the notes bundled with the Junagarhi translation, which do not
+ * cover every ayah.
+ */
 enum class Tafseer(
     val label: String,
-    val file: String,
+    val file: String?,
     val rtl: Boolean,
-    val title: String,
+    /** "Name — author", shown under the Tafseer heading. */
+    val source: String,
     val credit: String,
 ) {
     ENGLISH(
-        "English", "en-mukhtasar", false, "Al-Mukhtasar",
-        "Al-Mukhtasar in Interpreting the Noble Quran, by the Tafsir Center for Quranic Studies, as published on QuranEnc.com.",
+        "English", "en-mukhtasar", false,
+        "Al-Mukhtasar in Interpreting the Noble Quran — Tafsir Center for Quranic Studies",
+        "QuranEnc.com",
+    ),
+    URDU(
+        "اردو", null, true,
+        "تفسیر احسن البیان — حافظ صلاح الدین یوسف",
+        "Ahsan-ul-Bayan, notes to the Junagarhi translation. QuranEnc.com, version 1.1.3.",
     ),
     ARABIC(
-        "العربية", "ar-muyassar", true, "التفسير الميسر",
-        "Al-Tafsir al-Muyassar, by a committee of scholars, King Fahd Glorious Quran Printing Complex.",
+        "العربية", "ar-muyassar", true,
+        "التفسير الميسر — مجمع الملك فهد لطباعة المصحف الشريف",
+        "Al-Tafsir al-Muyassar, King Fahd Glorious Quran Printing Complex.",
     ),
+    ;
+
+    /** The next language, for the chip beside the heading. */
+    val next: Tafseer get() = entries[(ordinal + 1) % entries.size]
+
+    companion object {
+        /** Until one is chosen, the tafseer follows the reader's translation. */
+        fun forMode(mode: TranslationMode): Tafseer = if (mode == TranslationMode.URDU) URDU else ENGLISH
+    }
 }
 
 /** Word-by-word English glosses from the Quranic Arabic Corpus (GNU GPL v3). */
@@ -77,6 +99,7 @@ class QuranRepository(private val context: Context) {
     private val notes = mutableMapOf<Translation, Map<Int, String>>()
     private val tafseer = mutableMapOf<Tafseer, Array<String>>()
     private var glosses: Array<String>? = null
+    private var phonetic: Array<String>? = null
 
     private fun readAyat(file: String): Array<String> {
         val out = arrayOfNulls<String>(Quran.AYAH_COUNT)
@@ -96,6 +119,17 @@ class QuranRepository(private val context: Context) {
 
     private suspend fun glosses(): Array<String> = lock.withLock {
         glosses ?: withContext(Dispatchers.IO) { readAyat("en-wbw") }.also { glosses = it }
+    }
+
+    private suspend fun phonetic(): Array<String> = lock.withLock {
+        phonetic ?: withContext(Dispatchers.IO) { readAyat("wbw-phonetic") }.also { phonetic = it }
+    }
+
+    /** One ayah word by word, with each word's transliteration, or null if it does not line up. */
+    suspend fun words(ref: AyahRef): List<QuranWord>? {
+        val i = Quran.indexOf(ref)
+        val arabic = QuranText.displayArabic(ref, arabic()[i])
+        return WordByWord.pair(ref, arabic, WordByWord.glosses(glosses()[i]), WordByWord.glosses(phonetic()[i]))
     }
 
     suspend fun surah(number: Int, mode: TranslationMode, wordByWord: Boolean = false): List<Verse> {
@@ -141,10 +175,11 @@ class QuranRepository(private val context: Context) {
         return all[Quran.indexOf(ref)]
     }
 
-    /** The tafseer of one ayah. */
-    suspend fun tafseer(t: Tafseer, ref: AyahRef): String {
+    /** The tafseer of one ayah, or null where Ahsan-ul-Bayan has no note on it. */
+    suspend fun tafseer(t: Tafseer, ref: AyahRef): String? {
+        val file = t.file ?: return notes(Translation.URDU, ref)
         val all = lock.withLock {
-            tafseer[t] ?: withContext(Dispatchers.IO) { readAyat(t.file) }.also { tafseer[t] = it }
+            tafseer[t] ?: withContext(Dispatchers.IO) { readAyat(file) }.also { tafseer[t] = it }
         }
         return QuranText.unescapeNote(all[Quran.indexOf(ref)])
     }
