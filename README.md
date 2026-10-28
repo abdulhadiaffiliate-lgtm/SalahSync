@@ -56,6 +56,11 @@ v1.0 Core, v1.1 Quran, v1.2 Tracker and Adhkar, and v1.3 Silent mode, Weekly rep
 - After each answer the right one is shown with a short explanation and its source: the ayah (tap it to open the reader) or the hadith with its grading and a sunnah.com link. Only well-established basics are asked, and every hadith was checked against the pinned hadith dataset.
 - The questions are in `core/.../quiz/Quiz.kt`, with the correct option written first; each round shuffles the options. Open it from Explore on Home or from More.
 
+## 99 Names of Allah
+
+- All 99 names in Arabic, with a transliteration and English meaning, searchable by name, meaning, number or Arabic. A name of the day sits at the top of the screen and on its Explore tile on Home; open it from Explore or from More.
+- The Arabic and order follow the listing in Jami' at-Tirmidhi 3507, copied from the same pinned hadith dataset, with Al-Ahad added after Al-Wahid as in most lists. The screen notes that this listing is graded weak, and cites Sahih al-Bukhari 2736 for the 99 names. The list is in `core/.../names/AllahNames.kt`.
+
 ## Goals
 
 - Small daily targets: pray all five, pray all five on time, read Quran for a number of minutes (5 to 60), and morning or evening adhkar. Weekly targets, Friday to Thursday: meet your daily goals on a number of days, and make up a number of Qada prayers.
