@@ -4,6 +4,7 @@ import com.salahsync.core.hadith.DailyHadith
 import com.salahsync.core.hadith.HadithBook
 import com.salahsync.core.hadith.HadithEdition
 import com.salahsync.core.hadith.HadithNumber
+import com.salahsync.core.hadith.HadithPick
 import com.salahsync.core.hadith.HadithQuery
 import com.salahsync.core.hadith.HadithSections
 import com.salahsync.core.hadith.HadithSource
@@ -11,6 +12,7 @@ import java.io.File
 import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -71,8 +73,17 @@ class HadithTest {
         assertEquals(20, picks.size)
         assertEquals(picks.size, picks.map { it.book to it.ref }.toSet().size)
         assertTrue(picks.all { it.book.isSahihCollection })
+        assertTrue(picks.all(DailyHadith::isSahih))
         val start = LocalDate.of(2026, 1, 1)
         assertEquals(20, (0L until 20).map { DailyHadith.indexFor(start.plusDays(it)) }.toSet().size)
+    }
+
+    @Test
+    fun onlySahihHadithCountForTheDay() {
+        assertTrue(DailyHadith.isSahih(HadithPick(HadithBook.MUSLIM, "2564c", "")))
+        assertFalse(DailyHadith.isSahih(HadithPick(HadithBook.MUSLIM, "intro-5", "")))
+        assertFalse(DailyHadith.isSahih(HadithPick(HadithBook.ABU_DAWUD, "23", "")))
+        assertFalse(DailyHadith.isSahih(HadithPick(HadithBook.TIRMIDHI, "1987", "")))
     }
 
     @Test

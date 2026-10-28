@@ -69,6 +69,7 @@ data class HadithPick(val book: HadithBook, val ref: String, val topic: String)
 
 /**
  * Twenty well-known hadith from Sahih al-Bukhari and Sahih Muslim, one a day in turn.
+ * Only sahih hadith may be picked: the Sunan and Muslim's introduction are refused below.
  * Their text is bundled (assets/hadith/daily.json, made by scripts/build-daily-hadith.py
  * from the pinned dataset), so the Home screen has one without any download.
  */
@@ -95,6 +96,15 @@ object DailyHadith {
         HadithPick(HadithBook.BUKHARI, "6406", "Two words heavy on the scale"),
         HadithPick(HadithBook.MUSLIM, "2674", "Calling others to guidance"),
     )
+
+    init {
+        picks.forEach {
+            require(isSahih(it)) { "Hadith of the Day must be sahih: ${it.book.shortTitle} ${it.ref} is not" }
+        }
+    }
+
+    /** From Bukhari or Muslim, and not from Muslim's introduction, whose reports are not all sahih. */
+    fun isSahih(pick: HadithPick): Boolean = pick.book.isSahihCollection && !HadithNumber.isIntroduction(pick.ref)
 
     fun indexFor(date: LocalDate): Int = Math.floorMod(date.toEpochDay(), picks.size.toLong()).toInt()
 
