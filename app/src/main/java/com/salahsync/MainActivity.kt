@@ -179,7 +179,7 @@ private val tabs = listOf(
     Tab(Routes.HOME, "Home", SalahIcons.Home),
     Tab(Routes.PRAYERS, "Prayers", SalahIcons.Clock),
     Tab(Routes.QURAN, "Quran", SalahIcons.Book),
-    Tab(Routes.QIBLA, "Qibla", SalahIcons.Compass),
+    Tab(Routes.HADITH, "Hadith", SalahIcons.Notes),
     Tab(Routes.MORE, "More", SalahIcons.More),
 )
 
@@ -232,7 +232,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     asrLabel = prefs.asrSchool.displayName.substringBefore(','),
                     today = today,
                     tomorrow = tomorrow,
-                    onOpenQibla = { nav.switchTab(Routes.QIBLA) },
+                    onOpenQibla = { nav.navigate(Routes.QIBLA) },
                     onOpenTasbih = { nav.navigate(Routes.TASBIH) },
                     onOpenQuran = { nav.switchTab(Routes.QURAN) },
                     onOpenComingSoon = { nav.navigate(Routes.soon(it)) },
@@ -241,7 +241,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     hadithTopic = todaysHadith?.let { hadith.topicOf(it)?.topic },
                     hadithLanguage = hadithPrefs.language,
                     onOpenDailyHadith = { nav.navigate(Routes.hadithView(it)) },
-                    onOpenHadith = { nav.navigate(Routes.HADITH) },
+                    onOpenHadith = { nav.switchTab(Routes.HADITH) },
                     onOpenAdhkar = { nav.navigate(Routes.ADHKAR) },
                     onOpenTracker = { nav.navigate(Routes.TRACKER) },
                     onOpenDuas = { nav.navigate(Routes.DUAS) },
@@ -298,7 +298,8 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onGuides = { nav.navigate(Routes.GUIDES) },
                     onTracker = { nav.navigate(Routes.TRACKER) },
                     onQuran = { nav.switchTab(Routes.QURAN) },
-                    onHadith = { nav.navigate(Routes.HADITH) },
+                    onHadith = { nav.switchTab(Routes.HADITH) },
+                    onQibla = { nav.navigate(Routes.QIBLA) },
                     onSettings = { nav.navigate(Routes.SETTINGS) },
                     onAbout = { nav.navigate(Routes.ABOUT) },
                 )
@@ -430,7 +431,8 @@ private fun BottomBar(nav: NavHostController, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         tabs.forEach { tab ->
-            val selected = current == tab.route || (tab.route == Routes.QURAN && current == Routes.READER)
+            val selected = current == tab.route || (tab.route == Routes.QURAN && current == Routes.READER) ||
+                (tab.route == Routes.HADITH && current?.startsWith("hadith/") == true)
             val tint = if (selected) c.accent else c.textMuted
             Column(
                 Modifier.weight(1f).fillMaxSize()

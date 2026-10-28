@@ -50,6 +50,7 @@ fun MoreScreen(
     onTracker: () -> Unit,
     onQuran: () -> Unit,
     onHadith: () -> Unit,
+    onQibla: () -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
 ) {
@@ -65,6 +66,7 @@ fun MoreScreen(
         Entry("Morning and evening adhkar", "With the hadith source for each", SalahIcons.Heart, onAdhkar)
         Entry("Tasbih", "Dhikr counter: 33, 33, 34", SalahIcons.Beads, onTasbih)
         Entry("Duas", "Daily supplications from the Sunnah", SalahIcons.Star, onDuas)
+        Entry("Qibla", "Compass pointing to the Kaaba", SalahIcons.Compass, onQibla)
         Section("Read and learn")
         Entry("Quran", "Read, listen and keep your place", SalahIcons.Book, onQuran)
         Entry("Hadith", "Bukhari, Muslim, Abu Dawud and Tirmidhi", SalahIcons.Notes, onHadith)
