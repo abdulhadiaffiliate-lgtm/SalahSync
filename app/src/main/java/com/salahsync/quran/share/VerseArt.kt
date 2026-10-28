@@ -39,12 +39,30 @@ enum class CardStyle(
     DAWN("Dawn", 0xFF2E4A52.toInt(), 0xFF8C6A4E.toInt(), 0xFFFBF5EA.toInt(), 0xFFE9DCC6.toInt(), 0xFFF1D7A3.toInt(), false),
 }
 
-/** A verse to draw: Arabic, an optional translation and its reference. */
-data class VerseCard(val arabic: String, val translation: String?, val translationRtl: Boolean, val reference: String)
+/** The image size: a 4:5 post, or a 9:16 story for WhatsApp status and Instagram. */
+enum class CardShape(val label: String, val height: Int) {
+    POST("Post", 1350),
+    STORY("Story", 1920),
+}
 
-/** Draws verse cards and surah artwork with the app's Mushaf, Urdu and Latin fonts. */
+/**
+ * Text to draw: Arabic (may be blank), an optional translation, its reference, and an
+ * optional [note] under the reference, such as a hadith's grading.
+ */
+data class VerseCard(
+    val arabic: String,
+    val translation: String?,
+    val translationRtl: Boolean,
+    val reference: String,
+    val note: String? = null,
+)
+
+/** Draws verse and hadith cards, and surah artwork, with the app's Mushaf, Urdu and Latin fonts. */
 object VerseArt {
     private const val WIDTH = 1080
+
+    /** The tallest image we make; longer text is offered as text instead. */
+    private const val MAX_HEIGHT = 3240
 
     /** Loads a bundled font; variable fonts are pinned to [weight] where Android allows it. */
     internal fun font(context: Context, id: Int, weight: Int = 500, italic: Boolean = false): Typeface {
@@ -71,7 +89,11 @@ object VerseArt {
         }
     }
 
-    fun render(context: Context, card: VerseCard, style: CardStyle): Bitmap {
+    /**
+     * Draws [card] on [style] at [shape]. Returns null when the text is too long for one
+     * readable image, so the caller can suggest less text or sharing it as text.
+     */
+    fun render(context: Context, card: VerseCard, style: CardStyle, shape: CardShape = CardShape.POST): Bitmap? {
         val margin = 110
         val textWidth = WIDTH - margin * 2
         val arabicPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -88,32 +110,45 @@ object VerseArt {
             textSize = 30f
             letterSpacing = 0.18f
         }
+        val notePaint = TextPaint(refPaint).apply { color = style.muted; textSize = 26f; letterSpacing = 0.04f }
         val brandPaint = TextPaint(refPaint).apply { color = style.muted; textSize = 26f }
 
-        val arabic = fit(card.arabic, arabicPaint, textWidth, true, 1.55f, 76f, 34f, 900)
-        val translation = card.translation?.takeIf { it.isNotBlank() }?.let {
-            if (card.translationRtl) fit(it, transPaint, textWidth, true, 1.35f, 44f, 26f, 620)
-            else fit("“$it”", transPaint, textWidth, false, 1.2f, 50f, 28f, 620)
+        // Text budgets grow with the shape, so a story gets larger type than a post.
+        val translationText = card.translation?.takeIf { it.isNotBlank() }
+        val alone = card.arabic.isBlank() || translationText == null
+        val arabicBudget = (shape.height * if (alone) 0.8f else 0.66f).toInt()
+        val transBudget = (shape.height * if (alone) 0.8f else 0.46f).toInt()
+        val arabic = card.arabic.takeIf { it.isNotBlank() }?.let { fit(it, arabicPaint, textWidth, true, 1.55f, 76f, 34f, arabicBudget) }
+        val translation = translationText?.let {
+            if (card.translationRtl) fit(it, transPaint, textWidth, true, 1.35f, 44f, 26f, transBudget)
+            else fit("“$it”", transPaint, textWidth, false, 1.2f, 50f, 28f, transBudget)
         }
+        val note = card.note?.takeIf { it.isNotBlank() }?.let { layout(it, notePaint, textWidth, false, 1.2f) }
 
         val gap = 64
-        val content = arabic.height + (translation?.let { gap * 2 + it.height } ?: 0) + gap + 40
-        val height = maxOf(1350, content + 2 * 190).coerceAtMost(2400)
+        val blocks = listOfNotNull(arabic, translation)
+        val content = blocks.sumOf { it.height } + (blocks.size - 1).coerceAtLeast(0) * gap * 2 + gap + 40 +
+            (note?.let { 16 + it.height } ?: 0)
+        val height = maxOf(shape.height, content + 2 * 190)
+        if (height > MAX_HEIGHT) return null
         val bitmap = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         background(canvas, style, WIDTH.toFloat(), height.toFloat())
 
         var y = ((height - content) / 2f).coerceAtLeast(150f)
-        canvas.save(); canvas.translate(margin.toFloat(), y); arabic.draw(canvas); canvas.restore()
-        y += arabic.height + gap
-        if (translation != null) {
-            hairline(canvas, style, y, WIDTH.toFloat())
-            y += gap
-            canvas.save(); canvas.translate(margin.toFloat(), y); translation.draw(canvas); canvas.restore()
-            y += translation.height + gap
+        blocks.forEachIndexed { i, block ->
+            if (i > 0) {
+                hairline(canvas, style, y, WIDTH.toFloat())
+                y += gap
+            }
+            canvas.save(); canvas.translate(margin.toFloat(), y); block.draw(canvas); canvas.restore()
+            y += block.height + gap
         }
         val ref = card.reference.uppercase()
         canvas.drawText(ref, (WIDTH - refPaint.measureText(ref)) / 2f, y + 30f, refPaint)
+        if (note != null) {
+            canvas.save(); canvas.translate(margin.toFloat(), y + 56f); note.draw(canvas); canvas.restore()
+        }
         val brand = "SALAHSYNC"
         canvas.drawText(brand, (WIDTH - brandPaint.measureText(brand)) / 2f, height - 80f, brandPaint)
         return bitmap

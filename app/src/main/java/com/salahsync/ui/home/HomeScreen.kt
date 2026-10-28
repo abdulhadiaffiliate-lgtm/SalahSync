@@ -48,6 +48,7 @@ import com.salahsync.core.goals.GoalsDay
 import com.salahsync.data.DailyContent
 import com.salahsync.hadith.HadithItem
 import com.salahsync.hadith.HadithLanguage
+import com.salahsync.hadith.HadithPrefs
 import com.salahsync.quran.Translation
 import com.salahsync.ui.quran.ShareCardDialog
 import com.salahsync.ui.components.CountdownRing
@@ -58,6 +59,7 @@ import com.salahsync.ui.components.GoldDivider
 import com.salahsync.ui.components.IconBadge
 import com.salahsync.ui.components.SalahIcons
 import com.salahsync.ui.goals.GoalsCard
+import com.salahsync.ui.hadith.ShareHadithDialog
 import com.salahsync.ui.hadith.TranslationText
 import com.salahsync.ui.hadith.shown
 import com.salahsync.ui.theme.ArabicStyle
@@ -119,6 +121,7 @@ fun HomeScreen(
     val next = nextPrayer(now, today, tomorrow)
     val ayah = DailyContent.ayahFor(now.toLocalDate())
     var sharing by remember { mutableStateOf(false) }
+    var sharingHadith by remember { mutableStateOf(false) }
     var calendarOpen by remember { mutableStateOf(false) }
     if (calendarOpen) {
         DualCalendarDialog(
@@ -225,6 +228,11 @@ fun HomeScreen(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("Hadith of the Day", style = MaterialTheme.typography.titleMedium, color = c.text, modifier = Modifier.weight(1f))
                     Text(
+                        "Share", style = MaterialTheme.typography.bodyMedium, color = c.accent,
+                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button) { sharingHadith = true }
+                            .padding(horizontal = 8.dp, vertical = 12.dp),
+                    )
+                    Text(
                         "All hadith", style = MaterialTheme.typography.bodyMedium, color = c.accent,
                         modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button, onClick = onOpenHadith)
                             .padding(horizontal = 8.dp, vertical = 12.dp),
@@ -264,6 +272,7 @@ fun HomeScreen(
         }
     }
     if (sharing) AyahShare(ayah) { sharing = false }
+    if (sharingHadith && dailyHadith != null) ShareHadithDialog(dailyHadith, HadithPrefs(language = hadithLanguage)) { sharingHadith = false }
 }
 
 @Composable
