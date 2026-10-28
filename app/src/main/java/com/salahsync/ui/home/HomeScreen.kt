@@ -44,6 +44,7 @@ import com.salahsync.core.HijriDate
 import com.salahsync.core.Prayer
 import com.salahsync.core.adhkar.Adhkar
 import com.salahsync.core.adhkar.AdhkarSession
+import com.salahsync.core.goals.GoalsDay
 import com.salahsync.data.DailyContent
 import com.salahsync.hadith.HadithItem
 import com.salahsync.hadith.HadithLanguage
@@ -55,6 +56,7 @@ import com.salahsync.ui.components.GeometricPattern
 import com.salahsync.ui.components.GoldDivider
 import com.salahsync.ui.components.IconBadge
 import com.salahsync.ui.components.SalahIcons
+import com.salahsync.ui.goals.GoalsCard
 import com.salahsync.ui.hadith.TranslationText
 import com.salahsync.ui.hadith.shown
 import com.salahsync.ui.theme.ArabicStyle
@@ -107,6 +109,8 @@ fun HomeScreen(
     onOpenDuas: () -> Unit,
     onOpenGuides: () -> Unit,
     onOpenQuiz: () -> Unit,
+    goals: GoalsDay?,
+    onOpenGoals: () -> Unit,
 ) {
     val c = Salah.colors
     val next = nextPrayer(now, today, tomorrow)
@@ -155,6 +159,11 @@ fun HomeScreen(
 
             Spacer(Modifier.height(14.dp))
             AdhkarCard(Adhkar.sessionAt(LocalTime.now()), onOpenAdhkar)
+
+            if (goals != null) {
+                Spacer(Modifier.height(10.dp))
+                GoalsCard(goals, onOpenGoals)
+            }
 
             Spacer(Modifier.height(10.dp))
             FeelingsCard(onOpenFeelings)

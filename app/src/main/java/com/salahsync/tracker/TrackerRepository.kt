@@ -91,6 +91,9 @@ class TrackerRepository(context: Context) {
     private suspend fun addEntry(prayer: Prayer, kind: QadaKind, count: Int, today: LocalDate) =
         dao.insertQada(QadaRow(prayer = prayer.name, kind = kind.name, count = count, day = today.toEpochDay(), createdAt = System.currentTimeMillis()))
 
+    /** How many Qada prayers were logged as made up from [from] on. */
+    fun madeUpSince(from: LocalDate): Flow<Int> = dao.qadaSince(QadaKind.MADE_UP.name, from.toEpochDay())
+
     fun adhkarProgress(date: LocalDate, session: AdhkarSession): Flow<Map<String, Int>> =
         dao.adhkarProgress(date.toEpochDay(), session.name).map { rows -> rows.associate { it.dhikrId to it.count } }
 

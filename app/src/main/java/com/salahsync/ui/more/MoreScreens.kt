@@ -49,6 +49,7 @@ fun MoreScreen(
     onFeelings: () -> Unit,
     onGuides: () -> Unit,
     onQuiz: () -> Unit,
+    onGoals: () -> Unit,
     onTracker: () -> Unit,
     onQuran: () -> Unit,
     onHadith: () -> Unit,
@@ -65,6 +66,7 @@ fun MoreScreen(
         Text("More", style = MaterialTheme.typography.headlineLarge, color = c.text, modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
         Section("Pray and remember")
         Entry("Prayer tracker", "Daily prayers and Qada, on this phone only", SalahIcons.Check, onTracker)
+        Entry("Goals", "Daily and weekly targets, with a gentle streak", SalahIcons.Flame, onGoals)
         Entry("Morning and evening adhkar", "With the hadith source for each", SalahIcons.Heart, onAdhkar)
         Entry("Tasbih", "Dhikr counter: 33, 33, 34", SalahIcons.Beads, onTasbih)
         Entry("Duas", "Daily supplications from the Sunnah", SalahIcons.Star, onDuas)
