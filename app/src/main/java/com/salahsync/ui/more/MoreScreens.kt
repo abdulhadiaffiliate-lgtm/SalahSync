@@ -49,6 +49,7 @@ fun MoreScreen(
     onFeelings: () -> Unit,
     onGuides: () -> Unit,
     onQuiz: () -> Unit,
+    onNames: () -> Unit,
     onGoals: () -> Unit,
     onTracker: () -> Unit,
     onQuran: () -> Unit,
@@ -76,6 +77,7 @@ fun MoreScreen(
         Entry("Quran", "Read, listen and keep your place", SalahIcons.Book, onQuran)
         Entry("Hadith", "Bukhari, Muslim, Abu Dawud and Tirmidhi", SalahIcons.Notes, onHadith)
         Entry("Wudu, Ghusl and Rakats", "Step-by-step guides, Hanafi or Shafi'i", SalahIcons.Drop, onGuides)
+        Entry("99 Names of Allah", "Arabic, meaning and a name each day", SalahIcons.Names, onNames)
         Entry("Islamic quiz", "Faith, prayer, Quran and the prophets", SalahIcons.Quiz, onQuiz)
         Section("SalahSync")
         Entry("Settings", "Prayer times, alerts, appearance", SalahIcons.Sliders, onSettings)

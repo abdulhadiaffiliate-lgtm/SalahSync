@@ -47,6 +47,7 @@ import com.salahsync.core.adhkar.AdhkarSession
 import com.salahsync.core.goals.GoalsDay
 import com.salahsync.core.daily.Ayah
 import com.salahsync.core.daily.DailyContent
+import com.salahsync.core.names.AllahNames
 import com.salahsync.hadith.HadithItem
 import com.salahsync.hadith.HadithLanguage
 import com.salahsync.hadith.HadithPrefs
@@ -115,6 +116,7 @@ fun HomeScreen(
     onOpenDuas: () -> Unit,
     onOpenGuides: () -> Unit,
     onOpenQuiz: () -> Unit,
+    onOpenNames: () -> Unit,
     goals: GoalsDay?,
     onOpenGoals: () -> Unit,
 ) {
@@ -193,6 +195,7 @@ fun HomeScreen(
             Text("Explore", style = MaterialTheme.typography.titleMedium, color = c.text)
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ExploreTile("99 Names of Allah", "Today: ${AllahNames.forDate(now.toLocalDate()).plain}", SalahIcons.Names, onOpenNames)
                 ExploreTile("Islamic quiz", "Five quick questions, with sources", SalahIcons.Quiz, onOpenQuiz)
                 ExploreTile("Prayer tracker", "Tick each prayer and see your week", SalahIcons.Check, onOpenTracker)
                 ExploreTile("Hadith", "Bukhari, Muslim, Abu Dawud and Tirmidhi", SalahIcons.Notes, onOpenHadith)
