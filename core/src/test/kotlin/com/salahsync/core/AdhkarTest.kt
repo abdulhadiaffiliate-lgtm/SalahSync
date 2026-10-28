@@ -3,6 +3,7 @@ package com.salahsync.core
 import com.salahsync.core.adhkar.Adhkar
 import com.salahsync.core.adhkar.AdhkarSession
 import com.salahsync.core.quran.Quran
+import java.time.LocalTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -34,5 +35,14 @@ class AdhkarTest {
             val ids = Adhkar.forSession(s).map { it.id }
             assertEquals(ids.size, ids.toSet().size)
         }
+    }
+
+    @Test
+    fun sessionFollowsTheTimeOfDay() {
+        assertEquals(AdhkarSession.EVENING, Adhkar.sessionAt(LocalTime.of(2, 59)))
+        assertEquals(AdhkarSession.MORNING, Adhkar.sessionAt(LocalTime.of(3, 0)))
+        assertEquals(AdhkarSession.MORNING, Adhkar.sessionAt(LocalTime.of(14, 59)))
+        assertEquals(AdhkarSession.EVENING, Adhkar.sessionAt(LocalTime.of(15, 0)))
+        assertEquals(AdhkarSession.EVENING, Adhkar.sessionAt(LocalTime.of(23, 30)))
     }
 }

@@ -36,7 +36,7 @@ class AdhkarViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = salah.tracker
     private val day = LocalDate.now()
 
-    private val _session = MutableStateFlow(defaultSession())
+    private val _session = MutableStateFlow(Adhkar.sessionAt(LocalTime.now()))
     val session: StateFlow<AdhkarSession> = _session.asStateFlow()
 
     /** Counts for the current session. Held here so fast taps never race the database. */
@@ -104,11 +104,5 @@ class AdhkarViewModel(app: Application) : AndroidViewModel(app) {
             // Always write the newest count, whatever order these writes run in.
             writeLock.withLock { repo.setAdhkarProgress(day, s, d.id, if (s == _session.value) _progress.value[d.id] ?: count else count) }
         }
-    }
-
-    private companion object {
-        /** Morning adhkar from Fajr until Asr; evening adhkar from Asr through the night. */
-        fun defaultSession(): AdhkarSession =
-            if (LocalTime.now().hour in 3 until 15) AdhkarSession.MORNING else AdhkarSession.EVENING
     }
 }
