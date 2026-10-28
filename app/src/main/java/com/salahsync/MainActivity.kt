@@ -107,16 +107,26 @@ class MainActivity : ComponentActivity() {
     /** Set when the Friday report notification is tapped. */
     private val openReport = MutableStateFlow(false)
 
+    /** Where the daily ayah or good deed notification leads: the ayah in the reader, or Home. */
+    private val openDaily = MutableStateFlow<DailyTarget?>(null)
+
+    private fun readDailyTarget(intent: Intent) {
+        AyahRef.parse(intent.getStringExtra(EXTRA_OPEN_AYAH))?.let { openDaily.value = DailyTarget.Ayah(it) }
+        if (intent.getBooleanExtra(EXTRA_OPEN_HOME, false)) openDaily.value = DailyTarget.Home
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) openPlayer.value = true
         if (intent.getBooleanExtra(EXTRA_OPEN_REPORT, false)) openReport.value = true
+        readDailyTarget(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) openPlayer.value = true
         if (savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_REPORT, false)) openReport.value = true
+        if (savedInstanceState == null) readDailyTarget(intent)
         setContent {
             val prefs by vm.prefs.collectAsStateWithLifecycle()
             val p = prefs ?: return@setContent
@@ -142,7 +152,7 @@ class MainActivity : ComponentActivity() {
                         onFinish = vm::completeOnboarding,
                     )
                 } else {
-                    AppShell(vm, p, openPlayer, openReport)
+                    AppShell(vm, p, openPlayer, openReport, openDaily)
                 }
             }
         }
@@ -151,7 +161,14 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_OPEN_PLAYER = "com.salahsync.OPEN_PLAYER"
         const val EXTRA_OPEN_REPORT = "com.salahsync.OPEN_REPORT"
+        const val EXTRA_OPEN_AYAH = "com.salahsync.OPEN_AYAH"
+        const val EXTRA_OPEN_HOME = "com.salahsync.OPEN_HOME"
     }
+}
+
+sealed interface DailyTarget {
+    data class Ayah(val ref: AyahRef) : DailyTarget
+    data object Home : DailyTarget
 }
 
 private object Routes {
@@ -198,7 +215,13 @@ private val tabs = listOf(
 )
 
 @Composable
-private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableStateFlow<Boolean>, openReport: MutableStateFlow<Boolean>) {
+private fun AppShell(
+    vm: MainViewModel,
+    prefs: UserPrefs,
+    openPlayer: MutableStateFlow<Boolean>,
+    openReport: MutableStateFlow<Boolean>,
+    openDaily: MutableStateFlow<DailyTarget?>,
+) {
     val nav = rememberNavController()
     val quran: QuranViewModel = viewModel()
     val tracker: TrackerViewModel = viewModel()
@@ -224,6 +247,15 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
             if (route != Routes.REPORT) nav.navigate(Routes.REPORT) { launchSingleTop = true }
             openReport.value = false
         }
+    }
+    val wantsDaily by openDaily.collectAsStateWithLifecycle()
+    LaunchedEffect(wantsDaily) {
+        when (val t = wantsDaily) {
+            null -> return@LaunchedEffect
+            is DailyTarget.Ayah -> nav.navigate(Routes.reader(t.ref)) { launchSingleTop = true }
+            DailyTarget.Home -> nav.resetTab(Routes.HOME)
+        }
+        openDaily.value = null
     }
     val showMini = playback.active && route != Routes.PLAYER
     val now by vm.now.collectAsStateWithLifecycle()
@@ -439,6 +471,10 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                         setSilentJumuahMinutes = vm::setSilentJumuahMinutes,
                         setSilentFor = vm::setSilentFor,
                         setWeeklyReport = vm::setWeeklyReport,
+                        setDailyNote = vm::setDailyNote,
+                        setDailyNoteKind = vm::setDailyNoteKind,
+                        setDailyNoteMinutes = vm::setDailyNoteMinutes,
+                        previewDailyNote = vm::previewDailyNote,
                     ),
                     onOpenAbout = { nav.navigate(Routes.ABOUT) },
                     onOpenReport = { nav.navigate(Routes.REPORT) },

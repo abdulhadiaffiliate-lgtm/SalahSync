@@ -19,6 +19,7 @@ import com.salahsync.core.Method
 import com.salahsync.core.Prayer
 import com.salahsync.core.RegionDefaults
 import com.salahsync.core.SilenceMode
+import com.salahsync.core.daily.DailyNoteKind
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -58,6 +59,9 @@ class SettingsRepository(private val context: Context) {
         val silentJumuah = intPreferencesKey("silent_jumuah_minutes")
         val silentPrayers = stringSetPreferencesKey("silent_prayers")
         val weeklyReport = booleanPreferencesKey("weekly_report")
+        val dailyNote = booleanPreferencesKey("daily_note")
+        val dailyNoteKind = stringPreferencesKey("daily_note_kind")
+        val dailyNoteMinutes = intPreferencesKey("daily_note_minutes")
     }
 
     val prefs: Flow<UserPrefs> = context.dataStore.data.map { it.toUserPrefs() }
@@ -102,6 +106,9 @@ class SettingsRepository(private val context: Context) {
                 ?.mapNotNull { runCatching { Prayer.valueOf(it) }.getOrNull() }?.filter { it.isFard }?.toSet()
                 ?: Prayer.fard.toSet(),
             weeklyReport = this[K.weeklyReport] ?: true,
+            dailyNote = this[K.dailyNote] ?: false,
+            dailyNoteKind = this[K.dailyNoteKind].toEnum(DailyNoteKind.ALTERNATE),
+            dailyNoteMinutes = this[K.dailyNoteMinutes] ?: UserPrefs.DEFAULT_DAILY_NOTE_MINUTES,
         )
     }
 
@@ -208,6 +215,12 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun setWeeklyReport(on: Boolean) = edit { it[K.weeklyReport] = on }
+
+    suspend fun setDailyNote(on: Boolean) = edit { it[K.dailyNote] = on }
+
+    suspend fun setDailyNoteKind(kind: DailyNoteKind) = edit { it[K.dailyNoteKind] = kind.name }
+
+    suspend fun setDailyNoteMinutes(minutes: Int) = edit { it[K.dailyNoteMinutes] = minutes.coerceIn(0, 24 * 60 - 1) }
 
     /** Counts consecutive days the app was opened. */
     suspend fun recordOpen(today: LocalDate = LocalDate.now()) = edit { p ->

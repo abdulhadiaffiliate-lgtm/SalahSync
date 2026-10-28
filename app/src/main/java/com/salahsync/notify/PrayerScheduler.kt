@@ -27,7 +27,8 @@ class PrayerScheduler(
     private val silence: PrayerSilence,
 ) {
 
-    enum class Kind { PRAYER, PRE_REMINDER, QURAN, DUA, SILENCE, WEEKLY_REPORT }
+    // New kinds go at the end: the ordinal is part of each alarm's request code.
+    enum class Kind { PRAYER, PRE_REMINDER, QURAN, DUA, SILENCE, WEEKLY_REPORT, DAILY_NOTE }
 
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
@@ -61,6 +62,9 @@ class PrayerScheduler(
                     val at = w.start.plusSeconds(PrayerSilence.START_DELAY_SECONDS)
                     schedule(Kind.SILENCE, dayIndex, w.prayer.ordinal, at, now, w.label, w.end)
                 }
+            }
+            if (prefs.dailyNote) {
+                schedule(Kind.DAILY_NOTE, dayIndex, 0, date.at(prefs.dailyNoteMinutes / 60, prefs.dailyNoteMinutes % 60, zone), now, null)
             }
             if (prefs.weeklyReport && date.dayOfWeek == DayOfWeek.FRIDAY) {
                 schedule(Kind.WEEKLY_REPORT, dayIndex, 0, date.at(9, 0, zone), now, null)
