@@ -208,6 +208,17 @@ private fun AboutContent() {
     Source("Quranic text", "Tanzil Quran Text (Uthmani, version 1.1), copyright 2007-2021 Tanzil Project, tanzil.net. Creative Commons Attribution 3.0; reproduced verbatim.")
     Source("English translation", "Saheeh International, published by Noor International Center. From QuranEnc.com, version 1.1.2, reproduced verbatim.")
     Source("Urdu translation", "Maulana Muhammad Junagarhi, with notes by Hafiz Salahuddin Yusuf. From QuranEnc.com, version 1.1.3, reproduced verbatim.")
+    Source(
+        "Tafseer",
+        "English: Al-Mukhtasar in Interpreting the Noble Quran, Tafsir Center for Quranic Studies, from QuranEnc.com. " +
+            "Urdu: Tafseer Ahsan-ul-Bayan, Hafiz Salahuddin Yusuf, the notes to the Junagarhi translation, from QuranEnc.com. " +
+            "Arabic: Al-Tafsir al-Muyassar, King Fahd Glorious Quran Printing Complex. Each reproduced verbatim.",
+    )
+    Source(
+        "Word by word",
+        "English meanings and transliteration of each word from the Quranic Arabic Corpus by Kais Dukes (corpus.quran.com), " +
+            "GNU General Public License v3, reproduced unchanged.",
+    )
     Source("Recitations", "Streamed per ayah from EveryAyah.com. Mishary Rashid Alafasy's recitation of Al-Fatihah and the last 32 surahs is included for offline listening.")
     Source("Surah and juz data", "Tanzil Project quran-data metadata.")
     Source(

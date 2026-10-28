@@ -57,7 +57,6 @@ import com.salahsync.core.quran.Quran
 import com.salahsync.core.quran.QuranText
 import com.salahsync.core.quran.QuranWord
 import com.salahsync.quran.QuranViewModel
-import com.salahsync.quran.Translation
 import com.salahsync.quran.Verse
 import com.salahsync.quran.WORD_BY_WORD_CREDIT
 import com.salahsync.quran.audio.Offline
@@ -273,8 +272,6 @@ private fun AyahItem(
 ) {
     val c = Salah.colors
     val bg by animateColorAsState(if (recited) c.accent.copy(alpha = 0.09f) else Color.Transparent, tween(350), label = "recited")
-    var showNotes by rememberSaveable(verse.ref.toString()) { mutableStateOf(false) }
-    val hasNotes = verse.translations.values.any { QuranText.footnoteRefs(it).isNotEmpty() }
     val shape = RoundedCornerShape(22.dp)
 
     Column(
@@ -289,8 +286,7 @@ private fun AyahItem(
                 EyebrowText("Sajdah", color = c.accent, modifier = Modifier.padding(start = 10.dp))
             }
             Spacer(Modifier.weight(1f))
-            ActionIcon(SalahIcons.Book, "Tafseer of ayah ${verse.ref}", false, onTafseer)
-            if (hasNotes) ActionIcon(SalahIcons.Notes, if (showNotes) "Hide notes" else "Show notes", showNotes) { showNotes = !showNotes }
+            TafseerButton(verse.ref, onTafseer)
             ActionIcon(SalahIcons.Share, "Share ayah ${verse.ref}", false, onShare)
             ActionIcon(if (bookmarked) SalahIcons.BookmarkFilled else SalahIcons.Bookmark, if (bookmarked) "Remove bookmark" else "Bookmark", bookmarked, onBookmark)
             ActionIcon(if (reciting) SalahIcons.Pause else SalahIcons.PlayLine, "Play from ayah ${verse.ref.ayah}", recited, onPlay)
@@ -313,35 +309,36 @@ private fun AyahItem(
                 Text(translationText(text, c.accent), style = MaterialTheme.typography.bodyLarge, color = c.textMuted)
             }
         }
-        if (showNotes) {
-            verse.translations.keys.forEach { t -> Notes(vm, t, verse.ref) }
-        }
-    }
-}
-
-@Composable
-private fun Notes(vm: QuranViewModel, t: Translation, ref: AyahRef) {
-    val c = Salah.colors
-    val notes by produceState<String?>(null, t, ref) { value = vm.notes(t, ref) }
-    val text = notes ?: return
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.text.copy(alpha = 0.04f)).padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        EyebrowText("Notes · ${t.translator}", color = c.accent)
-        if (t.rtl) Text(text, style = UrduStyle.copy(fontSize = 15.sp, lineHeight = 36.sp), color = c.textMuted, modifier = Modifier.fillMaxWidth())
-        else Text(text, style = MaterialTheme.typography.bodyMedium, color = c.textMuted)
     }
 }
 
 @Composable
 private fun ActionIcon(icon: ImageVector, description: String, active: Boolean, onClick: () -> Unit) {
     val c = Salah.colors
+    // A soft gold disc, filled solid when active (bookmarked or reciting), so each action stands out.
     Box(
-        Modifier.size(40.dp).clip(RoundedCornerShape(20.dp)).clickable(role = Role.Button, onClick = onClick),
+        Modifier.size(44.dp).padding(3.dp).clip(RoundedCornerShape(19.dp))
+            .background(if (active) c.accent else c.accent.copy(alpha = 0.13f))
+            .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = description, tint = if (active) c.accent else c.textMuted, modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = description, tint = if (active) c.onAccent else c.accent, modifier = Modifier.size(19.dp))
+    }
+}
+
+/** Tafseer is the ayah's main way in, so it gets a label as well as an icon. */
+@Composable
+private fun TafseerButton(ref: AyahRef, onClick: () -> Unit) {
+    val c = Salah.colors
+    Row(
+        Modifier.padding(end = 3.dp).height(38.dp).clip(RoundedCornerShape(19.dp)).background(c.accent.copy(alpha = 0.13f))
+            .clickable(role = Role.Button, onClickLabel = "Open the tafseer of ayah $ref", onClick = onClick)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(SalahIcons.Book, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp))
+        Text("Tafseer", style = MaterialTheme.typography.labelLarge, color = c.accent)
     }
 }
 
