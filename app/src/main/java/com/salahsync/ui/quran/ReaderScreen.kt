@@ -23,16 +23,12 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -61,7 +57,6 @@ import com.salahsync.core.quran.Quran
 import com.salahsync.core.quran.QuranText
 import com.salahsync.core.quran.QuranWord
 import com.salahsync.quran.QuranViewModel
-import com.salahsync.quran.Tafseer
 import com.salahsync.quran.Translation
 import com.salahsync.quran.Verse
 import com.salahsync.quran.WORD_BY_WORD_CREDIT
@@ -213,7 +208,7 @@ fun ReaderScreen(
     }
 
     if (showDisplay) DisplayDialog(prefs, vm::setMode, vm::setArabicSize, vm::setWordByWord) { showDisplay = false }
-    explaining?.let { ref -> TafseerDialog(vm, ref, prefs.tafseer, vm::setTafseer) { explaining = null } }
+    explaining?.let { ref -> AyahStudy(vm, ref, prefs.tafseer, vm::setTafseer) { explaining = null } }
     sharing?.let { v -> ShareVerseDialog(v, onDismiss = { sharing = null }) }
 }
 
@@ -371,44 +366,4 @@ private fun WordByWordText(words: List<QuranWord>, ayah: Int, arabicSize: Int) {
             Text(QuranText.ayahEnd(ayah), style = arabic, color = c.accent)
         }
     }
-}
-
-/** The tafseer of one ayah, in English or Arabic, with its source. */
-@Composable
-private fun TafseerDialog(vm: QuranViewModel, ref: AyahRef, selected: Tafseer, onSelect: (Tafseer) -> Unit, onDismiss: () -> Unit) {
-    val c = Salah.colors
-    val text by produceState<String?>(null, selected, ref) { value = vm.tafseer(selected, ref) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = c.surface,
-        title = {
-            Column {
-                EyebrowText("Tafseer · ${Quran.surah(ref.surah).name} ${ref}")
-                Text(selected.title, style = if (selected.rtl) ArabicStyle.copy(fontSize = 22.sp, lineHeight = 40.sp) else MaterialTheme.typography.titleLarge, color = c.text)
-            }
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Segmented(Tafseer.entries, selected, { it.label }, onSelect = onSelect)
-                Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                    val body = text
-                    when {
-                        body == null -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = c.accent)
-                        }
-                        selected.rtl -> Text(
-                            body, style = ArabicStyle.copy(fontSize = 19.sp, lineHeight = 38.sp), color = c.text,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        else -> Text(body, style = MaterialTheme.typography.bodyLarge, color = c.text)
-                    }
-                    Text(
-                        selected.credit, style = MaterialTheme.typography.bodySmall, color = c.textMuted,
-                        modifier = Modifier.padding(top = 16.dp),
-                    )
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close", color = c.accent) } },
-    )
 }
