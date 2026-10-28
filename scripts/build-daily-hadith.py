@@ -103,6 +103,10 @@ def main():
     cache = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "build", "hadith-cache")
     os.makedirs(cache, exist_ok=True)
     commit, hashes, daily = source()
+    for book, ref in daily:
+        # Hadith of the Day is sahih only: Bukhari or Muslim, outside Muslim's introduction.
+        if book not in ("bukhari", "muslim") or ref.startswith("intro-"):
+            sys.exit(f"{book} {ref}: Hadith of the Day must be sahih (Bukhari or Muslim)")
     editions = {}
     build(daily, "daily.json", commit, hashes, cache, editions)
     build(picks_in(FEELINGS), "feelings.json", commit, hashes, cache, editions)
