@@ -46,6 +46,7 @@ fun MoreScreen(
     onTasbih: () -> Unit,
     onAdhkar: () -> Unit,
     onDuas: () -> Unit,
+    onFeelings: () -> Unit,
     onGuides: () -> Unit,
     onQuiz: () -> Unit,
     onTracker: () -> Unit,
@@ -67,6 +68,7 @@ fun MoreScreen(
         Entry("Morning and evening adhkar", "With the hadith source for each", SalahIcons.Heart, onAdhkar)
         Entry("Tasbih", "Dhikr counter: 33, 33, 34", SalahIcons.Beads, onTasbih)
         Entry("Duas", "Daily supplications from the Sunnah", SalahIcons.Star, onDuas)
+        Entry("How are you feeling?", "Ayat, duas and hadith for your heart", SalahIcons.Heart, onFeelings)
         Entry("Qibla", "Compass pointing to the Kaaba", SalahIcons.Compass, onQibla)
         Section("Read and learn")
         Entry("Quran", "Read, listen and keep your place", SalahIcons.Book, onQuran)

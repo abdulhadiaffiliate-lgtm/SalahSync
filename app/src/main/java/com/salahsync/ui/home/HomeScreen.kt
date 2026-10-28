@@ -95,7 +95,7 @@ fun HomeScreen(
     onOpenQibla: () -> Unit,
     onOpenTasbih: () -> Unit,
     onOpenQuran: () -> Unit,
-    onOpenComingSoon: (String) -> Unit,
+    onOpenFeelings: () -> Unit,
     onOpenPrayers: () -> Unit,
     dailyHadith: HadithItem?,
     hadithTopic: String?,
@@ -150,11 +150,14 @@ fun HomeScreen(
                 QuickAction("Quran", SalahIcons.Book, Modifier.weight(1f), onOpenQuran)
                 QuickAction("Qibla", SalahIcons.Compass, Modifier.weight(1f), onOpenQibla)
                 QuickAction("Tasbih", SalahIcons.Beads, Modifier.weight(1f), onOpenTasbih)
-                QuickAction("Feelings", SalahIcons.Heart, Modifier.weight(1f)) { onOpenComingSoon("Feelings") }
+                QuickAction("Feelings", SalahIcons.Heart, Modifier.weight(1f), onOpenFeelings)
             }
 
             Spacer(Modifier.height(14.dp))
             AdhkarCard(Adhkar.sessionAt(LocalTime.now()), onOpenAdhkar)
+
+            Spacer(Modifier.height(10.dp))
+            FeelingsCard(onOpenFeelings)
 
             Spacer(Modifier.height(22.dp))
             Text("Explore", style = MaterialTheme.typography.titleMedium, color = c.text)
@@ -294,6 +297,27 @@ private fun AdhkarCard(session: AdhkarSession, onClick: () -> Unit) {
             Text("Tap to count, with the source for each", style = MaterialTheme.typography.bodySmall, color = c.textMuted)
         }
         Text(session.arabicName, style = ArabicStyle.copy(fontSize = 18.sp), color = c.accent)
+    }
+}
+
+/** The way into "How are you feeling?", under the adhkar card. */
+@Composable
+private fun FeelingsCard(onClick: () -> Unit) {
+    val c = Salah.colors
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        Modifier.fillMaxWidth().clip(shape).background(c.surface).border(1.dp, c.accentHairline, shape)
+            .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        IconBadge(SalahIcons.Heart)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            EyebrowText("For your heart", color = c.accent)
+            Text("How are you feeling?", style = MaterialTheme.typography.titleMedium, color = c.text)
+            Text("Sad, anxious, grateful and more: an ayah, a dua and a hadith for each", style = MaterialTheme.typography.bodySmall, color = c.textMuted)
+        }
+        Icon(SalahIcons.ChevronRight, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp))
     }
 }
 

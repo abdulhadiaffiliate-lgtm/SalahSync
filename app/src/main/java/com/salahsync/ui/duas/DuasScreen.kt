@@ -78,8 +78,9 @@ fun DuasScreen() {
     info?.let { d -> DuaSourceDialog(d) { info = null } }
 }
 
+/** A dua with its Arabic, meaning and first reference; ⓘ calls [onInfo]. Also used on the Feelings screen. */
 @Composable
-private fun DuaCard(dua: Dua, onInfo: () -> Unit) {
+fun DuaCard(dua: Dua, onInfo: () -> Unit) {
     val c = Salah.colors
     val shape = RoundedCornerShape(22.dp)
     Column(
@@ -105,8 +106,9 @@ private fun DuaCard(dua: Dua, onInfo: () -> Unit) {
     }
 }
 
+/** Every reference of a dua, with any matching ayah and note. */
 @Composable
-private fun DuaSourceDialog(dua: Dua, onDismiss: () -> Unit) {
+fun DuaSourceDialog(dua: Dua, onDismiss: () -> Unit) {
     val c = Salah.colors
     AlertDialog(
         onDismissRequest = onDismiss,
