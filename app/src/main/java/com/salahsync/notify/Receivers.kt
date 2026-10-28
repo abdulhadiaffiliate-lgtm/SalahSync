@@ -1,5 +1,6 @@
 package com.salahsync.notify
 
+import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -98,7 +99,19 @@ private suspend fun postWeeklyReport(app: SalahSyncApp) {
 /** Rebuilds the alarm chain after reboot, app update, clock or time-zone changes. */
 class RescheduleReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        // Exported for the system broadcasts, so other apps can reach it too: ignore anything else.
+        if (intent.action !in ACTIONS) return
         val app = context.applicationContext as SalahSyncApp
         runAsync { app.scheduler.reschedule(app.settings.current()) }
+    }
+
+    private companion object {
+        val ACTIONS = setOf(
+            Intent.ACTION_BOOT_COMPLETED,
+            Intent.ACTION_MY_PACKAGE_REPLACED,
+            Intent.ACTION_TIME_CHANGED,
+            Intent.ACTION_TIMEZONE_CHANGED,
+            AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED,
+        )
     }
 }

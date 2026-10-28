@@ -14,4 +14,8 @@
     <exclude domain="database" path="hadith.db-shm" />
     <exclude domain="database" path="hadith.db-wal" />
     <exclude domain="database" path="hadith.db-journal" />
+    <!-- Downloaded recitations and cached AlAdhan months can be fetched again. Recitations
+         alone can pass the 25 MB backup limit, and then Android backs up nothing at all. -->
+    <exclude domain="file" path="recitations/" />
+    <exclude domain="file" path="aladhan/" />
 </full-backup-content>
