@@ -25,8 +25,11 @@ data class QuranPrefs(
     val reciterId: String = Reciters.default.id,
     val arabicSize: Int = DEFAULT_ARABIC_SIZE,
     val wordByWord: Boolean = false,
-    val tafseer: Tafseer = Tafseer.ENGLISH,
+    /** The tafseer language last chosen; null until one is, when it follows [mode]. */
+    val tafseerChoice: Tafseer? = null,
 ) {
+    val tafseer: Tafseer get() = tafseerChoice ?: Tafseer.forMode(mode)
+
     fun isBookmarked(ref: AyahRef): Boolean = bookmarks.any { it.ref == ref }
 
     companion object {
@@ -55,7 +58,7 @@ class QuranStore(private val context: Context) {
             reciterId = p[K.reciter]?.takeIf { Reciters.byId(it) != null } ?: Reciters.default.id,
             arabicSize = (p[K.arabicSize] ?: QuranPrefs.DEFAULT_ARABIC_SIZE).coerceIn(QuranPrefs.arabicSizes),
             wordByWord = p[K.wordByWord] ?: false,
-            tafseer = p[K.tafseer]?.let { runCatching { Tafseer.valueOf(it) }.getOrNull() } ?: Tafseer.ENGLISH,
+            tafseerChoice = p[K.tafseer]?.let { runCatching { Tafseer.valueOf(it) }.getOrNull() },
         )
     }
 
