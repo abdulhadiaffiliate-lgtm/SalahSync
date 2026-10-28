@@ -33,6 +33,12 @@ object SalahIcons {
     val Home = icon("home", "M4,11 L12,5 L20,11 V19 a1,1 0 0 1 -1,1 H15 V15 H9 V20 H5 a1,1 0 0 1 -1,-1 Z")
     val Clock = icon("clock", circle(12f, 12f, 8f), "M12,8 V12 L15,14")
     val Book = icon("book", "M12,6 C10,4.5 7,4 4,4.5 V17.5 C7,17 10,17.5 12,19 C14,17.5 17,17 20,17.5 V4.5 C17,4 14,4.5 12,6 Z", "M12,6 V19")
+    /** An open mushaf resting on a rehal, the folding Quran stand. */
+    val Tafseer = icon(
+        "tafseer",
+        "M12,6.5 C10,5 7,4.6 4,5.2 V13.8 C7,13.3 10,13.7 12,15.2 C14,13.7 17,13.3 20,13.8 V5.2 C17,4.6 14,5 12,6.5 Z",
+        "M12,6.5 V15.2", "M7.5,16 L16.5,20.5", "M16.5,16 L7.5,20.5",
+    )
     val Compass = icon("compass", circle(12f, 12f, 9f), "M15.5,8.5 L13.5,13.5 L8.5,15.5 L10.5,10.5 Z")
     val Beads = icon(
         "beads",

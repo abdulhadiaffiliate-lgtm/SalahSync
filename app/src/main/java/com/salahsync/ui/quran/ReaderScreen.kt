@@ -286,7 +286,7 @@ private fun AyahItem(
                 EyebrowText("Sajdah", color = c.accent, modifier = Modifier.padding(start = 10.dp))
             }
             Spacer(Modifier.weight(1f))
-            TafseerButton(verse.ref, onTafseer)
+            ActionIcon(SalahIcons.Tafseer, "Tafseer of ayah ${verse.ref}", false, onTafseer)
             ActionIcon(SalahIcons.Share, "Share ayah ${verse.ref}", false, onShare)
             ActionIcon(if (bookmarked) SalahIcons.BookmarkFilled else SalahIcons.Bookmark, if (bookmarked) "Remove bookmark" else "Bookmark", bookmarked, onBookmark)
             ActionIcon(if (reciting) SalahIcons.Pause else SalahIcons.PlayLine, "Play from ayah ${verse.ref.ayah}", recited, onPlay)
@@ -323,22 +323,6 @@ private fun ActionIcon(icon: ImageVector, description: String, active: Boolean, 
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = description, tint = if (active) c.onAccent else c.accent, modifier = Modifier.size(19.dp))
-    }
-}
-
-/** Tafseer is the ayah's main way in, so it gets a label as well as an icon. */
-@Composable
-private fun TafseerButton(ref: AyahRef, onClick: () -> Unit) {
-    val c = Salah.colors
-    Row(
-        Modifier.padding(end = 3.dp).height(38.dp).clip(RoundedCornerShape(19.dp)).background(c.accent.copy(alpha = 0.13f))
-            .clickable(role = Role.Button, onClickLabel = "Open the tafseer of ayah $ref", onClick = onClick)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Icon(SalahIcons.Book, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp))
-        Text("Tafseer", style = MaterialTheme.typography.labelLarge, color = c.accent)
     }
 }
 
