@@ -1,6 +1,7 @@
 package com.salahsync.core
 
 import java.time.LocalDate
+import java.time.YearMonth
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -38,6 +39,14 @@ class RegionAndHijriTest {
         // 1 Ramadan 1447 in the Umm al-Qura calendar is 18 February 2026.
         assertEquals(HijriDate(1, 9, 1447), Hijri.of(LocalDate.of(2026, 2, 18)))
         assertEquals("Ramadan", HijriDate(1, 9, 1447).monthName)
+    }
+
+    @Test
+    fun hijriSpanOfGregorianMonth() {
+        // February 2026 runs from Sha'ban into Ramadan 1447.
+        assertEquals("Sha'ban – Ramadan 1447", Hijri.spanOf(YearMonth.of(2026, 2)))
+        val crossesYear = Hijri.spanOf(YearMonth.of(2026, 6))
+        assertTrue(crossesYear.contains("1447") && crossesYear.contains("1448"), crossesYear)
     }
 
     @Test
