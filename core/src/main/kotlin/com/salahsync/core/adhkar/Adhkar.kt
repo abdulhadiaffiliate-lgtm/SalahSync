@@ -1,6 +1,7 @@
 package com.salahsync.core.adhkar
 
 import com.salahsync.core.quran.AyahRef
+import java.time.LocalTime
 
 enum class AdhkarSession(val displayName: String, val arabicName: String) {
     MORNING("Morning", "أذكار الصباح"),
@@ -235,6 +236,10 @@ object Adhkar {
         references = listOf(bukhari("3293", "Abu Hurayrah")),
         note = "The hadith says \"in a day\"; it is placed with the morning adhkar so it protects for the whole day.",
     )
+
+    /** Morning adhkar from Fajr until Asr; evening adhkar from Asr through the night. */
+    fun sessionAt(time: LocalTime): AdhkarSession =
+        if (time.hour in 3 until 15) AdhkarSession.MORNING else AdhkarSession.EVENING
 
     fun forSession(session: AdhkarSession): List<Dhikr> = when (session) {
         AdhkarSession.MORNING -> listOf(

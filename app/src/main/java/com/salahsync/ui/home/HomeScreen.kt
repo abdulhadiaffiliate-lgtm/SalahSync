@@ -3,6 +3,7 @@ package com.salahsync.ui.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -34,11 +36,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.salahsync.core.DayTimes
 import com.salahsync.core.HijriDate
 import com.salahsync.core.Prayer
+import com.salahsync.core.adhkar.Adhkar
+import com.salahsync.core.adhkar.AdhkarSession
 import com.salahsync.data.DailyContent
 import com.salahsync.hadith.HadithItem
 import com.salahsync.hadith.HadithLanguage
@@ -48,6 +53,7 @@ import com.salahsync.ui.components.CountdownRing
 import com.salahsync.ui.components.EyebrowText
 import com.salahsync.ui.components.GeometricPattern
 import com.salahsync.ui.components.GoldDivider
+import com.salahsync.ui.components.IconBadge
 import com.salahsync.ui.components.SalahIcons
 import com.salahsync.ui.hadith.TranslationText
 import com.salahsync.ui.hadith.shown
@@ -57,6 +63,7 @@ import com.salahsync.ui.theme.Salah
 import com.salahsync.ui.util.formatCountdown
 import com.salahsync.ui.util.formatTime
 import java.time.Duration
+import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.time.format.TextStyle
 import java.util.Locale
@@ -95,6 +102,10 @@ fun HomeScreen(
     hadithLanguage: HadithLanguage,
     onOpenDailyHadith: (HadithItem) -> Unit,
     onOpenHadith: () -> Unit,
+    onOpenAdhkar: () -> Unit,
+    onOpenTracker: () -> Unit,
+    onOpenDuas: () -> Unit,
+    onOpenGuides: () -> Unit,
 ) {
     val c = Salah.colors
     val next = nextPrayer(now, today, tomorrow)
@@ -139,6 +150,19 @@ fun HomeScreen(
                 QuickAction("Qibla", SalahIcons.Compass, Modifier.weight(1f), onOpenQibla)
                 QuickAction("Tasbih", SalahIcons.Beads, Modifier.weight(1f), onOpenTasbih)
                 QuickAction("Feelings", SalahIcons.Heart, Modifier.weight(1f)) { onOpenComingSoon("Feelings") }
+            }
+
+            Spacer(Modifier.height(14.dp))
+            AdhkarCard(Adhkar.sessionAt(LocalTime.now()), onOpenAdhkar)
+
+            Spacer(Modifier.height(22.dp))
+            Text("Explore", style = MaterialTheme.typography.titleMedium, color = c.text)
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ExploreTile("Prayer tracker", "Tick each prayer and see your week", SalahIcons.Check, onOpenTracker)
+                ExploreTile("Hadith", "Bukhari, Muslim, Abu Dawud and Tirmidhi", SalahIcons.Notes, onOpenHadith)
+                ExploreTile("Duas", "For the moments of your day", SalahIcons.Star, onOpenDuas)
+                ExploreTile("Wudu and Rakats", "Step-by-step guides", SalahIcons.Drop, onOpenGuides)
             }
 
             Spacer(Modifier.height(22.dp))
@@ -246,6 +270,44 @@ private fun NextPrayerCard(next: NextPrayer?, now: ZonedDateTime, asrLabel: Stri
             Text(next.arabic, style = ArabicStyle, color = c.textMuted)
             val suffix = if (next.prayer == Prayer.ASR) " · $asrLabel" else ""
             Text("${formatTime(next.at)}$suffix", style = MaterialTheme.typography.bodyMedium, color = c.textMuted)
+        }
+    }
+}
+
+/** Morning or evening adhkar, whichever fits the time of day, one tap away. */
+@Composable
+private fun AdhkarCard(session: AdhkarSession, onClick: () -> Unit) {
+    val c = Salah.colors
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        Modifier.fillMaxWidth().clip(shape).background(c.surface).border(1.dp, c.accentHairline, shape)
+            .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        IconBadge(SalahIcons.Heart)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            EyebrowText("Now", color = c.accent)
+            Text("${session.displayName} adhkar", style = MaterialTheme.typography.titleMedium, color = c.text)
+            Text("Tap to count, with the source for each", style = MaterialTheme.typography.bodySmall, color = c.textMuted)
+        }
+        Text(session.arabicName, style = ArabicStyle.copy(fontSize = 18.sp), color = c.accent)
+    }
+}
+
+@Composable
+private fun ExploreTile(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit) {
+    val c = Salah.colors
+    val shape = RoundedCornerShape(20.dp)
+    Column(
+        Modifier.width(160.dp).heightIn(min = 132.dp).clip(shape).background(c.text.copy(alpha = 0.03f))
+            .border(1.dp, c.hairline, shape).clickable(role = Role.Button, onClick = onClick).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        IconBadge(icon, size = 40.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = c.text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = c.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }

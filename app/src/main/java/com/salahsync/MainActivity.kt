@@ -242,6 +242,10 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     hadithLanguage = hadithPrefs.language,
                     onOpenDailyHadith = { nav.navigate(Routes.hadithView(it)) },
                     onOpenHadith = { nav.navigate(Routes.HADITH) },
+                    onOpenAdhkar = { nav.navigate(Routes.ADHKAR) },
+                    onOpenTracker = { nav.navigate(Routes.TRACKER) },
+                    onOpenDuas = { nav.navigate(Routes.DUAS) },
+                    onOpenGuides = { nav.navigate(Routes.GUIDES) },
                 )
             }
             composable(Routes.QURAN) { QuranScreen(quran, onRead = { nav.navigate(Routes.reader(it)) }) }

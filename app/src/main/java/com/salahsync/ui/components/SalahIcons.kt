@@ -79,5 +79,6 @@ object SalahIcons {
     val Minus = icon("minus", "M6,12 H18")
     val Plus = icon("plus", "M12,6 V18", "M6,12 H18")
     val Trash = icon("trash", "M5,7 H19", "M10,4 H14", "M7,7 L8,20 H16 L17,7", "M10.5,11 V16", "M13.5,11 V16")
+    val Drop = icon("drop", "M12,3.5 C12,3.5 6.5,9.8 6.5,14 A5.5,5.5 0 0 0 17.5,14 C17.5,9.8 12,3.5 12,3.5 Z")
     val Waves = icon("waves", "M4,10 V14", "M8,7 V17", "M12,4 V20", "M16,8 V16", "M20,11 V13")
 }

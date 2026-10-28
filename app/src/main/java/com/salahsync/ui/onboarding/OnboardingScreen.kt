@@ -23,9 +23,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -45,12 +47,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.salahsync.data.Cities
 import com.salahsync.data.SavedLocation
 import com.salahsync.data.UserPrefs
 import com.salahsync.ui.components.EyebrowText
 import com.salahsync.ui.components.GeometricPattern
+import com.salahsync.ui.components.IconBadge
 import com.salahsync.ui.components.SalahIcons
 import com.salahsync.ui.settings.isIgnoringBatteryOptimizations
 import com.salahsync.ui.settings.openBatterySettings
@@ -87,16 +91,44 @@ fun OnboardingScreen(
         Column(
             Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().padding(24.dp),
         ) {
-            EyebrowText("Step ${step + 1} of 3", color = c.accent)
-            Spacer(Modifier.height(12.dp))
+            if (step > 0) {
+                EyebrowText("Step $step of 3", color = c.accent)
+                Spacer(Modifier.height(12.dp))
+            }
             when (step) {
                 0 -> {
-                    Text("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ", style = ArabicStyle, color = c.accent)
-                    Spacer(Modifier.height(8.dp))
-                    Text("Welcome to SalahSync", style = MaterialTheme.typography.headlineLarge, color = c.text)
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                        Spacer(Modifier.height(12.dp))
+                        Text("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ", style = ArabicStyle, color = c.accent)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Welcome to SalahSync", style = MaterialTheme.typography.headlineLarge, color = c.text)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "A calm companion for your five daily prayers. Here is what's inside.",
+                            style = MaterialTheme.typography.bodyLarge, color = c.textMuted,
+                        )
+                        Spacer(Modifier.height(24.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                            Highlight(SalahIcons.Clock, "Prayer times and adhan", "Accurate for where you are, and they work offline")
+                            Highlight(SalahIcons.Book, "The Quran, to read and listen", "Arabic with English and Urdu, and 8 reciters")
+                            Highlight(SalahIcons.Check, "Keep track of every prayer", "Qada, streaks and a weekly report")
+                            Highlight(SalahIcons.Heart, "Adhkar, duas and hadith", "Each one with its source")
+                        }
+                        Spacer(Modifier.height(24.dp))
+                    }
+                    Text(
+                        "Free, with no ads and no account.",
+                        style = MaterialTheme.typography.bodySmall, color = c.textMuted,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), textAlign = TextAlign.Center,
+                    )
+                    PrimaryButton("Get started", enabled = true) { step = 1 }
+                }
+
+                1 -> {
+                    Text("What should we call you?", style = MaterialTheme.typography.headlineLarge, color = c.text)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Accurate prayer times and a gentle adhan, wherever you are. What should we call you?",
+                        "SalahSync uses it only to greet you, and never sends it anywhere.",
                         style = MaterialTheme.typography.bodyLarge, color = c.textMuted,
                     )
                     Spacer(Modifier.height(24.dp))
@@ -105,7 +137,7 @@ fun OnboardingScreen(
                         label = { Text("Your name") }, singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { if (name.isNotBlank()) { onName(name); step = 1 } }),
+                        keyboardActions = KeyboardActions(onNext = { if (name.isNotBlank()) { onName(name); step = 2 } }),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = c.accent, unfocusedBorderColor = c.accentHairline,
                             focusedLabelColor = c.accent, unfocusedLabelColor = c.textMuted,
@@ -113,10 +145,10 @@ fun OnboardingScreen(
                         ),
                     )
                     Spacer(Modifier.weight(1f))
-                    PrimaryButton("Continue", enabled = name.isNotBlank()) { onName(name); step = 1 }
+                    PrimaryButton("Continue", enabled = name.isNotBlank()) { onName(name); step = 2 }
                 }
 
-                1 -> {
+                2 -> {
                     Text("Where do you pray?", style = MaterialTheme.typography.headlineLarge, color = c.text)
                     Spacer(Modifier.height(8.dp))
                     Text(
@@ -157,7 +189,7 @@ fun OnboardingScreen(
                     } else {
                         Spacer(Modifier.weight(1f))
                     }
-                    PrimaryButton("Continue", enabled = prefs.location != null) { step = 2 }
+                    PrimaryButton("Continue", enabled = prefs.location != null) { step = 3 }
                 }
 
                 else -> {
@@ -191,6 +223,18 @@ fun OnboardingScreen(
                     PrimaryButton("Start using SalahSync", enabled = true, onClick = onFinish)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun Highlight(icon: ImageVector, title: String, body: String) {
+    val c = Salah.colors
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        IconBadge(icon)
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = c.text)
+            Text(body, style = MaterialTheme.typography.bodySmall, color = c.textMuted)
         }
     }
 }
