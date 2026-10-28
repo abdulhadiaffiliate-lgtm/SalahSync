@@ -51,6 +51,13 @@ v1.0 Core, v1.1 Quran, v1.2 Tracker and Adhkar, and v1.3 Silent mode, Weekly rep
 - After each answer the right one is shown with a short explanation and its source: the ayah (tap it to open the reader) or the hadith with its grading and a sunnah.com link. Only well-established basics are asked, and every hadith was checked against the pinned hadith dataset.
 - The questions are in `core/.../quiz/Quiz.kt`, with the correct option written first; each round shuffles the options. Open it from Explore on Home or from More.
 
+## Goals
+
+- Small daily targets: pray all five, pray all five on time, read Quran for a number of minutes (5 to 60), and morning or evening adhkar. Weekly targets, Friday to Thursday: meet your daily goals on a number of days, and make up a number of Qada prayers.
+- Nothing is entered twice. Prayers and Qada come from the prayer tracker, adhkar from the counts on the adhkar screen, and Quran time from the reader (counted while it is on screen); reading from a printed mushaf can be added 5 minutes at a time.
+- Home shows today's goals as a progress ring, with the streak. The streak is gentle: today never breaks it, and one missed day in a week is let go. The days met are recorded as they happen, so changing goals never rewrites earlier days.
+- Settings, reading time and the days met are kept in `datastore/goals.preferences_pb`, on the phone only and left out of cloud backup and device transfer. The rules are in `core/.../goals/Goals.kt`. Open Goals from Home or More.
+
 ## Build
 
 Requirements: JDK 17 and the Android SDK (API 35).

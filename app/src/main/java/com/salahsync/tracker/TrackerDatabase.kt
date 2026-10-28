@@ -80,6 +80,9 @@ interface TrackerDao {
     @Query("DELETE FROM qada_entry WHERE id = :id")
     suspend fun deleteQada(id: Long)
 
+    @Query("SELECT COALESCE(SUM(`count`), 0) FROM qada_entry WHERE kind = :kind AND day >= :from")
+    fun qadaSince(kind: String, from: Long): Flow<Int>
+
     @Query("SELECT * FROM adhkar_progress WHERE day = :day AND session = :session")
     fun adhkarProgress(day: Long, session: String): Flow<List<AdhkarProgressRow>>
 

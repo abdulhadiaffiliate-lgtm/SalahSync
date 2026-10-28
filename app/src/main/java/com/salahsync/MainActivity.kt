@@ -56,6 +56,7 @@ import com.salahsync.core.guides.Madhhab
 import com.salahsync.core.hadith.HadithBook
 import com.salahsync.core.quran.AyahRef
 import com.salahsync.data.UserPrefs
+import com.salahsync.goals.GoalsViewModel
 import com.salahsync.hadith.HadithItem
 import com.salahsync.hadith.HadithViewModel
 import com.salahsync.quran.QuranViewModel
@@ -63,6 +64,9 @@ import com.salahsync.tracker.TrackerViewModel
 import com.salahsync.ui.adhkar.AdhkarScreen
 import com.salahsync.ui.components.SalahIcons
 import com.salahsync.ui.duas.DuasScreen
+import com.salahsync.ui.goals.GoalsActions
+import com.salahsync.ui.goals.GoalsScreen
+import com.salahsync.ui.goals.ReadingTimer
 import com.salahsync.ui.guides.GuidesScreen
 import com.salahsync.ui.hadith.HadithBookScreen
 import com.salahsync.ui.hadith.HadithChapterScreen
@@ -169,6 +173,7 @@ private object Routes {
     const val DUAS = "duas"
     const val GUIDES = "guides"
     const val QUIZ = "quiz"
+    const val GOALS = "goals"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
     const val SOON = "soon/{feature}"
@@ -194,6 +199,8 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
     val hadithPrefs by hadith.prefs.collectAsStateWithLifecycle()
     val dailyHadith by hadith.daily.collectAsStateWithLifecycle()
     val trackerState by tracker.state.collectAsStateWithLifecycle()
+    val goals: GoalsViewModel = viewModel()
+    val goalsState by goals.state.collectAsStateWithLifecycle()
     val playback by quran.playback.collectAsStateWithLifecycle()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route
@@ -249,6 +256,8 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onOpenDuas = { nav.navigate(Routes.DUAS) },
                     onOpenGuides = { nav.navigate(Routes.GUIDES) },
                     onOpenQuiz = { nav.navigate(Routes.QUIZ) },
+                    goals = goalsState,
+                    onOpenGoals = { nav.navigate(Routes.GOALS) },
                 )
             }
             composable(Routes.QURAN) { QuranScreen(quran, onRead = { nav.navigate(Routes.reader(it)) }) }
@@ -260,6 +269,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                 ),
             ) { e ->
                 val surah = (e.arguments?.getInt("surah") ?: 1).coerceIn(1, 114)
+                ReadingTimer(goals::addReading)
                 ReaderScreen(
                     vm = quran,
                     surahNumber = surah,
@@ -300,6 +310,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onDuas = { nav.navigate(Routes.DUAS) },
                     onGuides = { nav.navigate(Routes.GUIDES) },
                     onQuiz = { nav.navigate(Routes.QUIZ) },
+                    onGoals = { nav.navigate(Routes.GOALS) },
                     onTracker = { nav.navigate(Routes.TRACKER) },
                     onQuran = { nav.switchTab(Routes.QURAN) },
                     onHadith = { nav.switchTab(Routes.HADITH) },
@@ -361,6 +372,21 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                 AdhkarScreen(adhkar)
             }
             composable(Routes.DUAS) { DuasScreen() }
+            composable(Routes.GOALS) {
+                GoalsScreen(
+                    state = goalsState,
+                    actions = GoalsActions(
+                        openTracker = { nav.navigate(Routes.TRACKER) },
+                        openQuran = { nav.switchTab(Routes.QURAN) },
+                        openAdhkar = { nav.navigate(Routes.ADHKAR) },
+                        setEnabled = { k, on -> goals.setEnabled(k, on) },
+                        setQuranMinutes = { goals.setQuranMinutes(it) },
+                        setGoodDays = { goals.setGoodDays(it) },
+                        setQadaPerWeek = { goals.setQadaPerWeek(it) },
+                        adjustReading = { goals.adjustReadingMinutes(it) },
+                    ),
+                )
+            }
             composable(Routes.QUIZ) { QuizScreen(onOpenAyah = { nav.navigate(Routes.reader(it)) }) }
             composable(Routes.GUIDES) {
                 GuidesScreen(if (prefs.asrSchool == AsrSchool.HANAFI) Madhhab.HANAFI else Madhhab.SHAFII)
