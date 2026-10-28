@@ -75,6 +75,7 @@ import com.salahsync.ui.more.MoreScreen
 import com.salahsync.ui.onboarding.OnboardingScreen
 import com.salahsync.ui.prayers.PrayerTimesScreen
 import com.salahsync.ui.qibla.QiblaScreen
+import com.salahsync.ui.quiz.QuizScreen
 import com.salahsync.ui.quran.MiniPlayer
 import com.salahsync.ui.quran.PlayerScreen
 import com.salahsync.ui.quran.QuranScreen
@@ -167,6 +168,7 @@ private object Routes {
     fun hadithView(item: HadithItem) = "hadith/view/${item.book.slug}/${android.net.Uri.encode(item.ref)}"
     const val DUAS = "duas"
     const val GUIDES = "guides"
+    const val QUIZ = "quiz"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
     const val SOON = "soon/{feature}"
@@ -246,6 +248,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onOpenTracker = { nav.navigate(Routes.TRACKER) },
                     onOpenDuas = { nav.navigate(Routes.DUAS) },
                     onOpenGuides = { nav.navigate(Routes.GUIDES) },
+                    onOpenQuiz = { nav.navigate(Routes.QUIZ) },
                 )
             }
             composable(Routes.QURAN) { QuranScreen(quran, onRead = { nav.navigate(Routes.reader(it)) }) }
@@ -296,6 +299,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onAdhkar = { nav.navigate(Routes.ADHKAR) },
                     onDuas = { nav.navigate(Routes.DUAS) },
                     onGuides = { nav.navigate(Routes.GUIDES) },
+                    onQuiz = { nav.navigate(Routes.QUIZ) },
                     onTracker = { nav.navigate(Routes.TRACKER) },
                     onQuran = { nav.switchTab(Routes.QURAN) },
                     onHadith = { nav.switchTab(Routes.HADITH) },
@@ -357,6 +361,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                 AdhkarScreen(adhkar)
             }
             composable(Routes.DUAS) { DuasScreen() }
+            composable(Routes.QUIZ) { QuizScreen(onOpenAyah = { nav.navigate(Routes.reader(it)) }) }
             composable(Routes.GUIDES) {
                 GuidesScreen(if (prefs.asrSchool == AsrSchool.HANAFI) Madhhab.HANAFI else Madhhab.SHAFII)
             }
