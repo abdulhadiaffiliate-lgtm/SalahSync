@@ -3,7 +3,6 @@ package com.salahsync.ui.hadith
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,6 +26,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,7 +47,9 @@ import com.salahsync.hadith.HadithLanguage
 import com.salahsync.hadith.HadithPrefs
 import com.salahsync.ui.components.EyebrowText
 import com.salahsync.ui.components.SalahIcons
+import com.salahsync.ui.quran.CardText
 import com.salahsync.ui.quran.Segmented
+import com.salahsync.ui.quran.ShareImageDialog
 import com.salahsync.ui.theme.ArabicStyle
 import com.salahsync.ui.theme.Salah
 import com.salahsync.ui.theme.UrduStyle
@@ -82,6 +87,8 @@ fun HadithCard(
     val shape = RoundedCornerShape(20.dp)
     val shown = item.shown(prefs.language)
     val preview = maxLines != Int.MAX_VALUE
+    var sharing by remember { mutableStateOf(false) }
+    if (sharing) ShareHadithDialog(item, prefs) { sharing = false }
     Column(
         modifier.fillMaxWidth().clip(shape).border(1.dp, c.hairline, shape)
             .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
@@ -99,7 +106,7 @@ fun HadithCard(
                 IconButton(onClick = { copy(context, shareText(item, prefs)) }) {
                     Icon(SalahIcons.Copy, contentDescription = "Copy hadith", tint = c.textMuted, modifier = Modifier.size(18.dp))
                 }
-                IconButton(onClick = { share(context, shareText(item, prefs)) }) {
+                IconButton(onClick = { sharing = true }) {
                     Icon(SalahIcons.Share, contentDescription = "Share hadith", tint = c.textMuted, modifier = Modifier.size(18.dp))
                 }
             }
@@ -152,10 +159,27 @@ private fun copy(context: Context, text: String) {
     Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
 }
 
-private fun share(context: Context, text: String) {
-    val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "$text\n\nShared from SalahSync")
-    context.startActivity(Intent.createChooser(send, "Share hadith"))
+/** Shares a hadith as an image: its Arabic, a translation, the reference and any gradings. */
+@Composable
+fun ShareHadithDialog(item: HadithItem, prefs: HadithPrefs, onDismiss: () -> Unit) {
+    val english = CardText("English", item.english, rtl = false)
+    val urdu = CardText("Urdu", item.urdu, rtl = true)
+    val ordered = if (prefs.language == HadithLanguage.URDU) listOf(urdu, english) else listOf(english, urdu)
+    ShareImageDialog(
+        title = "Share hadith",
+        arabic = item.arabic,
+        translations = ordered.filter { it.text.isNotBlank() },
+        reference = item.label,
+        onDismiss = onDismiss,
+        note = gradingNote(item),
+        arabicOptional = true,
+        showArabicInitially = prefs.showArabic,
+    )
 }
+
+/** The gradings as the dataset gives them; Bukhari and Muslim need none, their titles say sahih. */
+private fun gradingNote(item: HadithItem): String? =
+    item.grades.takeIf { it.isNotEmpty() }?.joinToString(" · ") { g -> if (g.scholar.isBlank()) g.grade else "${g.scholar}: ${g.grade}" }
 
 /** English or Urdu, and whether to show the Arabic. */
 @Composable
