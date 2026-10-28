@@ -3,6 +3,7 @@ package com.salahsync.core
 import com.salahsync.core.quran.AyahRef
 import com.salahsync.core.quran.Quran
 import com.salahsync.core.quran.QuranText
+import com.salahsync.core.quran.WordByWord
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -72,9 +73,13 @@ class QuranTest {
 
     @Test
     fun translationsHaveEveryAyah() {
-        for (name in listOf("en-saheeh.txt", "ur-junagarhi.txt")) {
+        for (name in listOf("en-saheeh.txt", "ur-junagarhi.txt", "en-mukhtasar.txt", "ar-muyassar.txt", "en-wbw.txt")) {
             val lines = File(assets, name).readLines().mapNotNull(QuranText::parseLine)
             assertEquals(Quran.AYAH_COUNT, lines.size, name)
+            lines.forEachIndexed { i, (ref, text) ->
+                assertEquals(Quran.refAt(i), ref, name)
+                assertTrue(text.isNotBlank(), "$name $ref is empty")
+            }
         }
     }
 
@@ -92,5 +97,28 @@ class QuranTest {
     fun arabicNumbers() {
         assertEquals("٢٥٥", QuranText.arabicNumber(255))
         assertTrue(QuranText.ayahEnd(7).startsWith("۝"))
+    }
+
+    @Test
+    fun everyAyahHasAGlossForEachWord() {
+        val arabic = File(assets, "ar-uthmani.txt").readLines().mapNotNull(QuranText::parseLine).toMap()
+        val glosses = File(assets, "en-wbw.txt").readLines().mapNotNull(QuranText::parseLine)
+        var words = 0
+        glosses.forEach { (ref, text) ->
+            val paired = WordByWord.pair(ref, QuranText.displayArabic(ref, arabic.getValue(ref)), WordByWord.glosses(text))
+            assertTrue(paired != null, "Words and glosses differ in $ref")
+            assertTrue(paired.all { it.arabic.isNotBlank() && it.gloss.isNotBlank() }, "$ref")
+            words += paired.size
+        }
+        assertEquals(77429, words)
+    }
+
+    @Test
+    fun joinedWordsShareOneGloss() {
+        val ref = AyahRef(37, 130)
+        val paired = WordByWord.pair(ref, "سَلَٰمٌ عَلَىٰٓ إِلْ يَاسِينَ", listOf("\"Peace be", "upon", "Elijah.\""))!!
+        assertEquals("إِلْ يَاسِينَ", paired[2].arabic)
+        assertEquals("Elijah.\"", paired[2].gloss)
+        assertNull(WordByWord.pair(AyahRef(1, 2), "a b c", listOf("x", "y")))
     }
 }
