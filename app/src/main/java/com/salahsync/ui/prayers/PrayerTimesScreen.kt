@@ -46,6 +46,7 @@ import com.salahsync.core.HijriDate
 import com.salahsync.core.Prayer
 import com.salahsync.data.AlertStyle
 import com.salahsync.data.UserPrefs
+import com.salahsync.ui.components.DualCalendarDialog
 import com.salahsync.ui.components.EyebrowText
 import com.salahsync.ui.components.SalahIcons
 import com.salahsync.ui.theme.ArabicStyle
@@ -81,6 +82,17 @@ fun PrayerTimesScreen(
     }
     val isToday = date == now.toLocalDate()
     val next = if (isToday) times?.next(now.toInstant()) else null
+    var calendarOpen by remember { mutableStateOf(false) }
+    if (calendarOpen) {
+        DualCalendarDialog(
+            initial = date,
+            today = now.toLocalDate(),
+            hijriFor = hijriFor,
+            onDismiss = { calendarOpen = false },
+            pickLabel = "Show prayer times",
+            onPick = { date = it; calendarOpen = false },
+        )
+    }
 
     Column(Modifier.fillMaxSize().background(c.background).verticalScroll(rememberScrollState())) {
         Box(
@@ -109,13 +121,21 @@ fun PrayerTimesScreen(
                         Icon(SalahIcons.ChevronLeft, contentDescription = "Previous day", tint = c.textMuted, modifier = Modifier.size(18.dp))
                     }
                     Column(
-                        Modifier.weight(1f).clickable(role = Role.Button, enabled = !isToday) { date = now.toLocalDate() },
+                        Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                            .clickable(role = Role.Button, onClickLabel = "Open calendar") { calendarOpen = true },
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(date.format(headerDate), style = MaterialTheme.typography.headlineMedium, color = c.text)
                         EyebrowText(hijriFor(date).toString(), color = c.accent)
-                        if (!isToday) EyebrowText("Tap for today")
+                        if (!isToday) {
+                            EyebrowText(
+                                "Back to today",
+                                modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                                    .clickable(role = Role.Button) { date = now.toLocalDate() }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
                     }
                     IconButton(onClick = { date = date.plusDays(1) }) {
                         Icon(SalahIcons.ChevronRight, contentDescription = "Next day", tint = c.textMuted, modifier = Modifier.size(18.dp))

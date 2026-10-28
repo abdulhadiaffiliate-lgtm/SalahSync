@@ -245,6 +245,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     streak = prefs.streakDays,
                     now = now,
                     hijri = vm.hijriFor(now.toLocalDate()),
+                    hijriFor = vm::hijriFor,
                     asrLabel = prefs.asrSchool.displayName.substringBefore(','),
                     today = today,
                     tomorrow = tomorrow,

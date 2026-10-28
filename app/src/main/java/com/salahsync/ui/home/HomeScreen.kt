@@ -51,6 +51,7 @@ import com.salahsync.hadith.HadithLanguage
 import com.salahsync.quran.Translation
 import com.salahsync.ui.quran.ShareCardDialog
 import com.salahsync.ui.components.CountdownRing
+import com.salahsync.ui.components.DualCalendarDialog
 import com.salahsync.ui.components.EyebrowText
 import com.salahsync.ui.components.GeometricPattern
 import com.salahsync.ui.components.GoldDivider
@@ -65,6 +66,7 @@ import com.salahsync.ui.theme.Salah
 import com.salahsync.ui.util.formatCountdown
 import com.salahsync.ui.util.formatTime
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.time.format.TextStyle
@@ -91,6 +93,7 @@ fun HomeScreen(
     streak: Int,
     now: ZonedDateTime,
     hijri: HijriDate,
+    hijriFor: (LocalDate) -> HijriDate,
     asrLabel: String,
     today: DayTimes?,
     tomorrow: DayTimes?,
@@ -116,6 +119,15 @@ fun HomeScreen(
     val next = nextPrayer(now, today, tomorrow)
     val ayah = DailyContent.ayahFor(now.toLocalDate())
     var sharing by remember { mutableStateOf(false) }
+    var calendarOpen by remember { mutableStateOf(false) }
+    if (calendarOpen) {
+        DualCalendarDialog(
+            initial = now.toLocalDate(),
+            today = now.toLocalDate(),
+            hijriFor = hijriFor,
+            onDismiss = { calendarOpen = false },
+        )
+    }
     Box(Modifier.fillMaxSize().background(c.background)) {
         GeometricPattern(Modifier.fillMaxWidth().height(320.dp))
         Column(
@@ -125,7 +137,12 @@ fun HomeScreen(
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     val day = now.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
-                    EyebrowText("$day · $hijri")
+                    EyebrowText(
+                        "$day · $hijri",
+                        modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                            .clickable(role = Role.Button, onClickLabel = "Open calendar") { calendarOpen = true }
+                            .padding(vertical = 4.dp),
+                    )
                     Text("Assalamu alaikum,", style = MaterialTheme.typography.headlineLarge, color = c.text)
                     if (name.isNotBlank()) {
                         Text(

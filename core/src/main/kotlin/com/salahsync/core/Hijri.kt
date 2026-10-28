@@ -1,6 +1,7 @@
 package com.salahsync.core
 
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.chrono.HijrahDate
 import java.time.temporal.ChronoField
 
@@ -37,4 +38,18 @@ object Hijri {
             year = h.get(ChronoField.YEAR),
         )
     }
+
+    /**
+     * The Hijri months a Gregorian month runs across, for a calendar header:
+     * "Rabi al-Thani – Jumada al-Ula 1448", or with both years when it crosses one.
+     */
+    fun spanOf(month: YearMonth, adjustmentDays: Int = 0): String =
+        span(of(month.atDay(1), adjustmentDays), of(month.atEndOfMonth(), adjustmentDays))
+
+    fun span(first: HijriDate, last: HijriDate): String =
+        when {
+            first.month == last.month && first.year == last.year -> "${first.monthName} ${first.year}"
+            first.year == last.year -> "${first.monthName} – ${last.monthName} ${last.year}"
+            else -> "${first.monthName} ${first.year} – ${last.monthName} ${last.year}"
+        }
 }
