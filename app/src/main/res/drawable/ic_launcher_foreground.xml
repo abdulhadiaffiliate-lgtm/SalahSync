@@ -1,21 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Eight-pointed star (khatam) inside a circle, on the 108dp adaptive-icon canvas. -->
+<!-- Mosque dome with a crescent finial, on the 108dp adaptive-icon canvas. The door is cut out
+     (evenOdd) rather than painted, so the same drawable works as the themed monochrome layer. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFD9BC84"
-        android:strokeWidth="2"
-        android:pathData="M54,30 L61,47 L78,54 L61,61 L54,78 L47,61 L30,54 L47,47 Z" />
+        android:fillColor="#FFD9BC84"
+        android:pathData="M54.52,22.03 A5,5 0 1,0 58.63,28.89 A4,4 0 1,1 54.52,22.03 Z" />
     <path
         android:fillColor="#00000000"
         android:strokeColor="#FFD9BC84"
-        android:strokeWidth="2"
-        android:pathData="M37,37 L54,40 L71,37 L68,54 L71,71 L54,68 L37,71 L40,54 Z" />
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,30 V39" />
     <path
         android:fillColor="#FFD9BC84"
-        android:pathData="M54,50 A4,4 0 1,1 53.99,50 Z" />
+        android:fillType="evenOdd"
+        android:pathData="M33,70 C33,54 43,47 54,40 C65,47 75,54 75,70 Z
+            M31,71.5 H77 A2,2 0 0,1 79,73.5 V76.5 A2,2 0 0,1 77,78.5 H31 A2,2 0 0,1 29,76.5 V73.5 A2,2 0 0,1 31,71.5 Z
+            M50,70 A4,4 0 0,1 58,70 Z
+            M50,71.5 H58 V78.5 H50 Z" />
 </vector>
