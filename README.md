@@ -39,9 +39,14 @@ v1.0 Core, v1.1 Quran, v1.2 Tracker and Adhkar, and v1.3 Silent mode, Weekly rep
 - Hadith of the Day: 20 hand-picked hadith from Bukhari and Muslim, one a day, on the Hadith screen and on Home. Their text is bundled, so they need no download. The list is `DailyHadith` in `core/.../hadith/HadithData.kt`; `scripts/build-daily-hadith.py` copies their text from the pinned dataset into `app/src/main/assets/hadith/daily.json`.
 - Sahih Muslim is numbered as on sunnah.com (Fuad Abdul Baqi, with letters for each narration, e.g. 2564c); the other books use their standard numbering.
 
+## How are you feeling?
+
+- Pick a feeling (sad, anxious, angry, lonely, afraid, guilty, grateful or unmotivated) to get two passages of the Quran, duas, and one hadith from Sahih al-Bukhari or Sahih Muslim, each with its source. Open it from the Feelings button or the "How are you feeling?" card on Home, or from More.
+- The ayat are read from the bundled Quran text in the reader's translation. The duas are from the Duas list. The hadith text is bundled (`app/src/main/assets/hadith/feelings.json`, built by `scripts/build-daily-hadith.py` from the same pinned dataset as the Hadith of the Day), so the screen works offline and the hadith opens in full on the Hadith screen. The list is in `core/.../feelings/Feelings.kt`.
+
 ## Duas and worship guides
 
-- 28 daily duas in nine groups (sleep, purification, home and mosque, food and fasting, after prayer, travel, hardship, everyday moments, and general supplications). Each shows the Arabic, an English meaning and the occasion; the info icon gives the book, hadith number, narrator and grading, linked to sunnah.com. The list is in `core/.../duas/Duas.kt`.
+- 29 daily duas in nine groups (sleep, purification, home and mosque, food and fasting, after prayer, travel, hardship, everyday moments, and general supplications). Each shows the Arabic, an English meaning and the occasion; the info icon gives the book, hadith number, narrator and grading, linked to sunnah.com. The list is in `core/.../duas/Duas.kt`.
 - Step-by-step Wudu and Ghusl, each step marked Fard or Sunnah for the chosen school, with its hadith or Quran source (`core/.../guides/Guides.kt`).
 - Rak'ahs of the five prayers and Jumu'ah, Hanafi or Shafi'i, split into sunnah before, fard, sunnah after and Witr (`core/.../guides/Rakats.kt`). The school defaults to the Asr setting and can be switched on the screen.
 

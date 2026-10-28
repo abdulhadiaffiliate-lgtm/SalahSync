@@ -289,6 +289,16 @@ object Duas {
             references = listOf(muslim("2721a", "'Abdullah ibn Mas'ud")),
         ),
         Dua(
+            id = "help_to_remember_and_thank",
+            category = DuaCategory.ASKING,
+            title = "Help to remember and thank Allah",
+            occasion = "After every prayer, and at any time",
+            arabic = "اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ",
+            meaning = "O Allah, help me to remember You, to thank You, and to worship You well.",
+            references = listOf(abuDawud("1522", "Mu'adh ibn Jabal", "Sahih (al-Albani)")),
+            note = "The Prophet ﷺ took Mu'adh's hand, told him he loved him, and advised him never to leave saying this after every prayer.",
+        ),
+        Dua(
             id = "steadfast_heart",
             category = DuaCategory.ASKING,
             title = "A steadfast heart",
