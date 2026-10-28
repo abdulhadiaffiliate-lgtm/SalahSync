@@ -52,6 +52,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.salahsync.adhkar.AdhkarViewModel
 import com.salahsync.core.AsrSchool
+import com.salahsync.core.feelings.Feeling
+import com.salahsync.core.feelings.Feelings
 import com.salahsync.core.guides.Madhhab
 import com.salahsync.core.hadith.HadithBook
 import com.salahsync.core.quran.AyahRef
@@ -64,6 +66,8 @@ import com.salahsync.tracker.TrackerViewModel
 import com.salahsync.ui.adhkar.AdhkarScreen
 import com.salahsync.ui.components.SalahIcons
 import com.salahsync.ui.duas.DuasScreen
+import com.salahsync.ui.feelings.FeelingScreen
+import com.salahsync.ui.feelings.FeelingsScreen
 import com.salahsync.ui.goals.GoalsActions
 import com.salahsync.ui.goals.GoalsScreen
 import com.salahsync.ui.goals.ReadingTimer
@@ -171,6 +175,9 @@ private object Routes {
     fun hadithChapter(book: HadithBook, chapter: Int) = "hadith/book/${book.slug}/$chapter"
     fun hadithView(item: HadithItem) = "hadith/view/${item.book.slug}/${android.net.Uri.encode(item.ref)}"
     const val DUAS = "duas"
+    const val FEELINGS = "feelings"
+    const val FEELING = "feelings/{id}"
+    fun feeling(f: Feeling) = "feelings/${f.id}"
     const val GUIDES = "guides"
     const val QUIZ = "quiz"
     const val GOALS = "goals"
@@ -244,7 +251,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onOpenQibla = { nav.navigate(Routes.QIBLA) },
                     onOpenTasbih = { nav.navigate(Routes.TASBIH) },
                     onOpenQuran = { nav.switchTab(Routes.QURAN) },
-                    onOpenComingSoon = { nav.navigate(Routes.soon(it)) },
+                    onOpenFeelings = { nav.navigate(Routes.FEELINGS) },
                     onOpenPrayers = { nav.switchTab(Routes.PRAYERS) },
                     dailyHadith = todaysHadith,
                     hadithTopic = todaysHadith?.let { hadith.topicOf(it)?.topic },
@@ -308,6 +315,7 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                     onTasbih = { nav.navigate(Routes.TASBIH) },
                     onAdhkar = { nav.navigate(Routes.ADHKAR) },
                     onDuas = { nav.navigate(Routes.DUAS) },
+                    onFeelings = { nav.navigate(Routes.FEELINGS) },
                     onGuides = { nav.navigate(Routes.GUIDES) },
                     onQuiz = { nav.navigate(Routes.QUIZ) },
                     onGoals = { nav.navigate(Routes.GOALS) },
@@ -385,6 +393,16 @@ private fun AppShell(vm: MainViewModel, prefs: UserPrefs, openPlayer: MutableSta
                         setQadaPerWeek = { goals.setQadaPerWeek(it) },
                         adjustReading = { goals.adjustReadingMinutes(it) },
                     ),
+                )
+            }
+            composable(Routes.FEELINGS) { FeelingsScreen(onOpen = { nav.navigate(Routes.feeling(it)) }) }
+            composable(Routes.FEELING, arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
+                val feeling = Feelings.byId(e.arguments?.getString("id")) ?: Feelings.all.first()
+                FeelingScreen(
+                    feeling, quran, hadith,
+                    onBack = { nav.popBackStack() },
+                    onOpenAyah = { nav.navigate(Routes.reader(it)) },
+                    onOpenHadith = { nav.navigate(Routes.hadithView(it)) },
                 )
             }
             composable(Routes.QUIZ) { QuizScreen(onOpenAyah = { nav.navigate(Routes.reader(it)) }) }

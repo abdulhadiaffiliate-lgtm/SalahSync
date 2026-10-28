@@ -4,6 +4,7 @@
   en-mukhtasar.txt  Al-Mukhtasar in Interpreting the Noble Quran (English), Tafsir Center for Quranic Studies
   ar-muyassar.txt   Al-Tafsir al-Muyassar (Arabic), King Fahd Glorious Quran Printing Complex
   en-wbw.txt        Quranic Arabic Corpus word-by-word English, by Kais Dukes
+  wbw-phonetic.txt  Quranic Arabic Corpus transliteration of each word, by Kais Dukes
 
 The tafseer is copied from spa5k/tafsir_api (QUL resources 266 and 38) and the
 word-by-word glosses from kaisdukes/quranic-corpus-api, each at a pinned commit and
@@ -56,8 +57,9 @@ TAFSEER = [
 WBW = {
     "path": "src/main/resources/data/translation/word-by-word.txt",
     "uthmani": "src/main/resources/data/quran-uthmani.xml",
+    "phonetic": "regression/phonetic.txt",
     "out": "en-wbw.txt",
-    "sha256": "a1b9ebeaa93cfa5e82d589c0923c7949f2ba22f8292c9257209dbe4a9a693208",
+    "sha256": "f808bf098516b5e377aa5e6d47ec516295940f72c4a44916e346af724c41ff4b",
     "header": [
         "Quranic Arabic Corpus, word-by-word English translation",
         "Copyright (C) 2009-2023 Kais Dukes. License: GNU General Public License, version 3",
@@ -66,6 +68,14 @@ WBW = {
         "One line per ayah: surah|ayah|the gloss of each word, in order, separated by tabs.",
         "The glosses are the corpus's own, unchanged. The corpus counts the words of an ayah",
         "as its Tanzil text split at spaces, except that 37:130 keeps 'il yasin' as one word.",
+    ],
+    "phonetic_out": "wbw-phonetic.txt",
+    "phonetic_header": [
+        "Quranic Arabic Corpus, transliteration of each word",
+        "Copyright (C) 2009-2023 Kais Dukes. License: GNU General Public License, version 3",
+        "(licenses/GPL-3.0.txt). Source: https://corpus.quran.com, copied from",
+        f"https://github.com/kaisdukes/quranic-corpus-api/blob/{CORPUS_COMMIT}/regression/phonetic.txt",
+        "One line per ayah, in the same layout and word order as en-wbw.txt. Unchanged.",
     ],
 }
 
@@ -82,6 +92,7 @@ def fetch(url, cache, name):
 
 
 def check(name, digest, expected):
+    print(name, digest.hexdigest(), file=sys.stderr)
     if digest.hexdigest() != expected:
         sys.exit(f"{name}: SHA-256 {digest.hexdigest()} does not match the pinned {expected}")
 
@@ -115,28 +126,39 @@ def build_wbw(cache):
     base = f"https://raw.githubusercontent.com/kaisdukes/quranic-corpus-api/{CORPUS_COMMIT}/"
     words = fetch(base + WBW["path"], cache, "corpus/word-by-word.txt")
     uthmani = fetch(base + WBW["uthmani"], cache, "corpus/quran-uthmani.xml")
+    phonetic = fetch(base + WBW["phonetic"], cache, "corpus/phonetic.txt")
     digest = hashlib.sha256(words)
     digest.update(uthmani)
+    digest.update(phonetic)
     check("word-by-word", digest, WBW["sha256"])
 
     # The corpus has no ayah numbers in this file: its words follow its Tanzil text in order.
     import xml.etree.ElementTree as ET
-    glosses = words.decode("utf-8").split("\n")
-    if glosses[-1] == "":
-        glosses.pop()
+    def lines(data):
+        out = data.decode("utf-8").split("\n")
+        return out[:-1] if out[-1] == "" else out
+
+    glosses = lines(words)
+    sounds = lines(phonetic)
+    assert len(sounds) == len(glosses), (len(sounds), len(glosses))
     rows = []
+    phonetic_rows = []
     i = 0
     for sura in ET.fromstring(uthmani).iter("sura"):
         for aya in sura.iter("aya"):
             surah, ayah = int(sura.get("index")), int(aya.get("index"))
             count = len(aya.get("text").split(" ")) - (1 if (surah, ayah) == (37, 130) else 0)
             rows.append(f"{surah}|{ayah}|" + "\t".join(glosses[i:i + count]) + "\n")
+            phonetic_rows.append(f"{surah}|{ayah}|" + "\t".join(sounds[i:i + count]) + "\n")
             i += count
     assert i == len(glosses), (i, len(glosses))
     assert len(rows) == 6236, len(rows)
     with open(os.path.join(OUT, WBW["out"]), "w", encoding="utf-8") as f:
         f.write(header(WBW["header"]))
         f.writelines(rows)
+    with open(os.path.join(OUT, WBW["phonetic_out"]), "w", encoding="utf-8") as f:
+        f.write(header(WBW["phonetic_header"]))
+        f.writelines(phonetic_rows)
 
 
 def main():

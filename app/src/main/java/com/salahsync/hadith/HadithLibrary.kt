@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.JsonReader
 import android.util.JsonToken
 import androidx.room.withTransaction
+import com.salahsync.core.feelings.Feelings
 import com.salahsync.core.hadith.ChapterAssigner
 import com.salahsync.core.hadith.DailyHadith
 import com.salahsync.core.hadith.Grade
@@ -71,15 +72,21 @@ class HadithLibrary(private val context: Context) {
     // The daily set ---------------------------------------------------------------------
 
     private var dailyCache: List<HadithItem>? = null
+    private var feelingsCache: List<HadithItem>? = null
 
     /** The 20 daily hadith, in [DailyHadith.picks] order. */
-    suspend fun daily(): List<HadithItem> = dailyCache ?: withContext(Dispatchers.IO) {
-        val json = JSONObject(context.assets.open("hadith/daily.json").bufferedReader().use { it.readText() })
+    suspend fun daily(): List<HadithItem> = dailyCache ?: bundled("hadith/daily.json").also { dailyCache = it }
+
+    /** The hadith of the Feelings screen, in [Feelings.hadithPicks] order. */
+    suspend fun feelings(): List<HadithItem> = feelingsCache ?: bundled("hadith/feelings.json").also { feelingsCache = it }
+
+    private suspend fun bundled(asset: String): List<HadithItem> = withContext(Dispatchers.IO) {
+        val json = JSONObject(context.assets.open(asset).bufferedReader().use { it.readText() })
         val list = json.getJSONArray("hadith")
         (0 until list.length()).map { i ->
             val o = list.getJSONObject(i)
             HadithItem(
-                book = HadithBook.bySlug(o.getString("book")) ?: error("Unknown book in daily.json"),
+                book = HadithBook.bySlug(o.getString("book")) ?: error("Unknown book in $asset"),
                 ref = o.getString("ref"),
                 chapter = o.optString("chapter"),
                 arabic = o.getString("arabic"),
@@ -87,10 +94,10 @@ class HadithLibrary(private val context: Context) {
                 urdu = o.getString("urdu"),
                 grades = emptyList(),
             )
-        }.also { dailyCache = it }
+        }
     }
 
-    fun topicOf(item: HadithItem): HadithPick? = DailyHadith.picks.firstOrNull { it.book == item.book && it.ref == item.ref }
+    fun topicOf(item: HadithItem): HadithPick? = (DailyHadith.picks + Feelings.hadithPicks).firstOrNull { it.book == item.book && it.ref == item.ref }
 
     // Reading ---------------------------------------------------------------------------
 
@@ -117,10 +124,10 @@ class HadithLibrary(private val context: Context) {
         return dao.inChapter(book.slug, chapter).map { it.toItem(title) }
     }
 
-    /** From the downloaded book if there is one, otherwise from the daily set. */
+    /** From the downloaded book if there is one, otherwise from the bundled daily and feelings sets. */
     suspend fun hadith(book: HadithBook, ref: String): HadithItem? {
         dao.byRef(book.slug, ref)?.let { return it.toItem(chapterTitle(book, it.chapter)) }
-        return daily().firstOrNull { it.book == book && it.ref == ref }
+        return (daily() + feelings()).firstOrNull { it.book == book && it.ref == ref }
     }
 
     /** Searches the downloaded books, Bukhari first. */

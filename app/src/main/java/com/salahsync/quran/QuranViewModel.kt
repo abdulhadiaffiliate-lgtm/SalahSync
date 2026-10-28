@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.salahsync.SalahSyncApp
 import com.salahsync.core.quran.AyahRef
+import com.salahsync.core.quran.QuranWord
 import com.salahsync.quran.audio.DownloadProgress
 import com.salahsync.quran.audio.Offline
 import com.salahsync.quran.audio.PlayerState
@@ -38,7 +39,8 @@ class QuranViewModel(app: Application) : AndroidViewModel(app) {
     suspend fun verse(ref: AyahRef, mode: TranslationMode): Verse = repo.verse(ref, mode)
     suspend fun basmala(): String = repo.basmala()
     suspend fun notes(t: Translation, ref: AyahRef): String? = repo.notes(t, ref)
-    suspend fun tafseer(t: Tafseer, ref: AyahRef): String = repo.tafseer(t, ref)
+    suspend fun tafseer(t: Tafseer, ref: AyahRef): String? = repo.tafseer(t, ref)
+    suspend fun words(ref: AyahRef): List<QuranWord>? = repo.words(ref)
 
     private fun io(block: suspend () -> Unit) {
         viewModelScope.launch { block() }
