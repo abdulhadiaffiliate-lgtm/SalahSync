@@ -42,6 +42,7 @@ import com.salahsync.core.quran.QuranText
 import com.salahsync.core.quran.QuranWord
 import com.salahsync.quran.QuranViewModel
 import com.salahsync.quran.Tafseer
+import com.salahsync.quran.Translation
 import com.salahsync.quran.TranslationMode
 import com.salahsync.quran.WORD_BY_WORD_CREDIT
 import com.salahsync.ui.components.SalahIcons
@@ -68,6 +69,7 @@ private fun AyahStudyContent(vm: QuranViewModel, ref: AyahRef, tafseer: Tafseer,
     val words by produceState<List<QuranWord>?>(null, ref) { value = vm.words(ref) }
     // Loaded is Pair(tafseer, text) so a stale text never shows under a new language.
     val loaded by produceState<Pair<Tafseer, String?>?>(null, tafseer, ref) { value = tafseer to vm.tafseer(tafseer, ref) }
+    val notes by produceState<String?>(null, ref) { value = vm.notes(Translation.ENGLISH, ref) }
     val cardShape = RoundedCornerShape(22.dp)
 
     Column(Modifier.fillMaxSize().background(c.background).statusBarsPadding().navigationBarsPadding()) {
@@ -124,6 +126,15 @@ private fun AyahStudyContent(vm: QuranViewModel, ref: AyahRef, tafseer: Tafseer,
                 }
             }
             Text(tafseer.credit, style = MaterialTheme.typography.bodySmall, color = c.textMuted)
+
+            // Saheeh International's footnotes, the gold numbers in the English translation.
+            notes?.let { text ->
+                Text("Translator's notes", style = MaterialTheme.typography.headlineSmall, color = c.text, modifier = Modifier.padding(top = 16.dp))
+                Text(Translation.ENGLISH.translator, style = MaterialTheme.typography.bodyMedium, color = c.textMuted)
+                Box(Modifier.fillMaxWidth().clip(cardShape).background(c.surface).padding(20.dp)) {
+                    Text(text, style = MaterialTheme.typography.bodyLarge, color = c.text)
+                }
+            }
         }
     }
 }
