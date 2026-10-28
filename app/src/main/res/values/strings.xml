@@ -13,5 +13,7 @@
     <string name="channel_quiet_desc">Shown while SalahSync has quietened your phone for prayer</string>
     <string name="channel_report">Weekly prayer report</string>
     <string name="channel_report_desc">Your week of prayers, every Friday morning</string>
+    <string name="channel_daily">Daily ayah and good deed</string>
+    <string name="channel_daily_desc">A short ayah or a good deed once a day, at the time you choose</string>
     <string name="quiet_restore_now">Turn sound back on</string>
 </resources>

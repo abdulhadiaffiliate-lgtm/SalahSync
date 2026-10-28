@@ -26,6 +26,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +37,9 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,15 +58,19 @@ import com.salahsync.core.HighLatitude
 import com.salahsync.core.Method
 import com.salahsync.core.Prayer
 import com.salahsync.core.SilenceMode
+import com.salahsync.core.daily.DailyNoteKind
 import com.salahsync.data.AlertStyle
 import com.salahsync.data.Cities
 import com.salahsync.data.SavedLocation
 import com.salahsync.data.ThemeMode
 import com.salahsync.data.UserPrefs
+import com.salahsync.notify.Notifications
 import com.salahsync.notify.PrayerSilence
 import com.salahsync.ui.components.EyebrowText
 import com.salahsync.ui.components.SalahIcons
 import com.salahsync.ui.theme.Salah
+import com.salahsync.ui.util.formatTime
+import java.time.LocalTime
 
 class SettingsActions(
     val setName: (String) -> Unit,
@@ -87,6 +95,10 @@ class SettingsActions(
     val setSilentJumuahMinutes: (Int) -> Unit,
     val setSilentFor: (Prayer, Boolean) -> Unit,
     val setWeeklyReport: (Boolean) -> Unit,
+    val setDailyNote: (Boolean) -> Unit,
+    val setDailyNoteKind: (DailyNoteKind) -> Unit,
+    val setDailyNoteMinutes: (Int) -> Unit,
+    val previewDailyNote: () -> Unit,
 )
 
 private sealed interface Picker {
@@ -102,6 +114,8 @@ private sealed interface Picker {
     data object SilentMinutes : Picker
     data object JumuahMinutes : Picker
     data object DndAccess : Picker
+    data object DailyKind : Picker
+    data object DailyTime : Picker
 }
 
 fun Context.isIgnoringBatteryOptimizations(): Boolean =
@@ -150,6 +164,13 @@ fun SettingsScreen(
         onPauseOrDispose { }
     }
     val needsAccess = prefs.silentMode.needsPolicyAccess && !dndAccess
+    // Notifications can be switched off in system settings, so check again on return too.
+    var canNotify by remember { mutableStateOf(Notifications.canPost(context)) }
+    LifecycleResumeEffect(Unit) {
+        canNotify = Notifications.canPost(context)
+        onPauseOrDispose { }
+    }
+    val dailyTime = LocalTime.of(prefs.dailyNoteMinutes / 60, prefs.dailyNoteMinutes % 60)
 
     Column(
         Modifier.fillMaxSize().background(c.background).verticalScroll(rememberScrollState()).statusBarsPadding()
@@ -233,6 +254,23 @@ fun SettingsScreen(
             }
         }
 
+        Section("Daily ayah and good deed") {
+            Toggle(
+                "Daily notification",
+                if (prefs.dailyNote) "Every day at ${formatTime(dailyTime)}, quietly, with no sound" else "A short ayah or a good deed, once a day",
+                prefs.dailyNote,
+                actions.setDailyNote,
+            )
+            if (prefs.dailyNote) {
+                Item("Show", prefs.dailyNoteKind.displayName) { picker = Picker.DailyKind }
+                Item("Time", formatTime(dailyTime)) { picker = Picker.DailyTime }
+                if (!canNotify) {
+                    Item("Allow notifications", "SalahSync cannot show notifications right now", onClick = context::openNotificationSettings)
+                }
+                Item("Preview", "Show today's notification now", onClick = actions.previewDailyNote)
+            }
+        }
+
         Section("Weekly report") {
             Toggle("Friday report", "A summary of your week every Friday at 9:00 AM", prefs.weeklyReport, actions.setWeeklyReport)
             Item("Open this week's report", "On time, late, missed, Qada and streaks", onClick = onOpenReport)
@@ -287,6 +325,12 @@ fun SettingsScreen(
         Picker.JumuahMinutes -> ChoiceDialog(
             "Jumu'ah", UserPrefs.jumuahMinuteOptions, prefs.silentJumuahMinutes, { "$it minutes" }, { picker = null },
         ) { actions.setSilentJumuahMinutes(it); picker = null }
+        Picker.DailyKind -> ChoiceDialog("Show", DailyNoteKind.entries, prefs.dailyNoteKind, { it.displayName }, { picker = null }) {
+            actions.setDailyNoteKind(it); picker = null
+        }
+        Picker.DailyTime -> TimeDialog("Daily notification time", dailyTime, onDismiss = { picker = null }) {
+            actions.setDailyNoteMinutes(it.hour * 60 + it.minute); picker = null
+        }
         Picker.DndAccess -> DndAccessDialog(
             mode = prefs.silentMode,
             onDismiss = { picker = null },
@@ -397,6 +441,39 @@ private fun <T> ChoiceDialog(
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Close", color = c.accent) } },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimeDialog(title: String, initial: LocalTime, onDismiss: () -> Unit, onSave: (LocalTime) -> Unit) {
+    val c = Salah.colors
+    val state = rememberTimePickerState(initial.hour, initial.minute, is24Hour = false)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = c.surface,
+        title = { Text(title, style = MaterialTheme.typography.titleLarge, color = c.text) },
+        text = {
+            TimePicker(
+                state,
+                colors = TimePickerDefaults.colors(
+                    clockDialColor = c.surfaceDeep,
+                    selectorColor = c.accent,
+                    clockDialSelectedContentColor = c.onAccent,
+                    clockDialUnselectedContentColor = c.text,
+                    periodSelectorBorderColor = c.accentHairline,
+                    periodSelectorSelectedContainerColor = c.accent,
+                    periodSelectorSelectedContentColor = c.onAccent,
+                    periodSelectorUnselectedContentColor = c.textMuted,
+                    timeSelectorSelectedContainerColor = c.accent,
+                    timeSelectorSelectedContentColor = c.onAccent,
+                    timeSelectorUnselectedContainerColor = c.surfaceDeep,
+                    timeSelectorUnselectedContentColor = c.text,
+                ),
+            )
+        },
+        confirmButton = { TextButton(onClick = { onSave(LocalTime.of(state.hour, state.minute)) }) { Text("Save", color = c.accent) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = c.textMuted) } },
     )
 }
 

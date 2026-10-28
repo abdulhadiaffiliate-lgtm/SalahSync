@@ -45,7 +45,8 @@ import com.salahsync.core.Prayer
 import com.salahsync.core.adhkar.Adhkar
 import com.salahsync.core.adhkar.AdhkarSession
 import com.salahsync.core.goals.GoalsDay
-import com.salahsync.data.DailyContent
+import com.salahsync.core.daily.Ayah
+import com.salahsync.core.daily.DailyContent
 import com.salahsync.hadith.HadithItem
 import com.salahsync.hadith.HadithLanguage
 import com.salahsync.quran.Translation
@@ -258,7 +259,9 @@ fun HomeScreen(
                 Icon(SalahIcons.Star, contentDescription = null, tint = c.accent, modifier = Modifier.size(20.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     EyebrowText("Today's good deed")
-                    Text(DailyContent.goodDeedFor(now.toLocalDate()), style = MaterialTheme.typography.bodyMedium, color = c.text)
+                    val deed = DailyContent.goodDeedFor(now.toLocalDate())
+                    Text(deed.text, style = MaterialTheme.typography.bodyMedium, color = c.text)
+                    Text(deed.source, style = MaterialTheme.typography.bodySmall, color = c.textMuted)
                 }
             }
         }
@@ -267,7 +270,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun AyahShare(ayah: com.salahsync.data.Ayah, onDismiss: () -> Unit) {
+private fun AyahShare(ayah: Ayah, onDismiss: () -> Unit) {
     ShareCardDialog(ayah.arabic, mapOf(Translation.ENGLISH to ayah.english), ayah.reference, onDismiss)
 }
 

@@ -7,6 +7,7 @@ import com.salahsync.core.Method
 import com.salahsync.core.Prayer
 import com.salahsync.core.PrayerSettings
 import com.salahsync.core.SilenceMode
+import com.salahsync.core.daily.DailyNoteKind
 
 enum class ThemeMode(val displayName: String) {
     DARK("Dark"), LIGHT("Light"), SYSTEM("Follow system")
@@ -53,6 +54,10 @@ data class UserPrefs(
     val silentJumuahMinutes: Int = 60,
     val silentPrayers: Set<Prayer> = Prayer.fard.toSet(),
     val weeklyReport: Boolean = true,
+    val dailyNote: Boolean = false,
+    val dailyNoteKind: DailyNoteKind = DailyNoteKind.ALTERNATE,
+    /** Minutes after midnight. */
+    val dailyNoteMinutes: Int = DEFAULT_DAILY_NOTE_MINUTES,
 ) {
     val prayerSettings: PrayerSettings
         get() = PrayerSettings(method, asrSchool, highLatitude, offsets)
@@ -60,6 +65,8 @@ data class UserPrefs(
     fun alertFor(prayer: Prayer): AlertStyle = alerts[prayer] ?: AlertStyle.OFF
 
     companion object {
+        const val DEFAULT_DAILY_NOTE_MINUTES = 7 * 60 + 30
+
         val silentMinuteOptions = listOf(10, 15, 20, 30, 45, 60)
         val jumuahMinuteOptions = listOf(30, 45, 60, 75, 90)
 

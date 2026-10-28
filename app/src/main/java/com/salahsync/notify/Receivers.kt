@@ -73,6 +73,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                     app.silence.begin(prefs, SilenceWindow(prayer, label, start, end))
                 }
                 PrayerScheduler.Kind.WEEKLY_REPORT -> if (prefs.weeklyReport) postWeeklyReport(app)
+                PrayerScheduler.Kind.DAILY_NOTE -> if (prefs.dailyNote) postDailyNote(app, prefs.dailyNoteKind)
                 null -> Unit
             }
             app.scheduler.reschedule(prefs)
